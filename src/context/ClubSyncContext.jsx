@@ -22,7 +22,7 @@ export function ClubSyncProvider({ children }) {
     queryKey: ['sync', currentUser?.id],
     queryFn: async () => {
       if (!currentUser) return null;
-      const res = await fetch('\/api/sync', {
+      const res = await fetch(`${API_URL}/api/sync`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();
@@ -79,7 +79,7 @@ export function ClubSyncProvider({ children }) {
         return
       }
       try {
-        const res = await fetch('\/api/auth/me', {
+        const res = await fetch(`${API_URL}/api/auth/me`, {
           headers: { Authorization: `Bearer ${activeToken}` }
         })
         const data = await res.json()
@@ -137,7 +137,7 @@ export function ClubSyncProvider({ children }) {
 
   // Auth Functions
   const register = async (email, password, fullName) => {
-    const res = await fetch('\/api/auth/register', {
+    const res = await fetch(`${API_URL}/api/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password, fullName })
@@ -151,7 +151,7 @@ export function ClubSyncProvider({ children }) {
   }
 
   const login = async (email, password) => {
-    const res = await fetch('\/api/auth/login', {
+    const res = await fetch(`${API_URL}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password })
@@ -172,7 +172,7 @@ export function ClubSyncProvider({ children }) {
 
   const updateProfile = async (profileData) => {
     try {
-      const res = await fetch('\/api/auth/profile', {
+      const res = await fetch(`${API_URL}/api/auth/profile`, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
@@ -194,7 +194,7 @@ export function ClubSyncProvider({ children }) {
 
   // Event Functions
   const createEvent = async (eventData) => {
-    const res = await fetch('\/api/events', {
+    const res = await fetch(`${API_URL}/api/events`, {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
@@ -209,7 +209,7 @@ export function ClubSyncProvider({ children }) {
   }
 
   const toggleRSVP = async (eventId) => {
-    const res = await fetch(`\/api/events/${eventId}/rsvp`, {
+    const res = await fetch(`${API_URL}/api/events/${eventId}/rsvp`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}` }
     })
@@ -243,7 +243,7 @@ export function ClubSyncProvider({ children }) {
   // Create standard notification
   const addNotification = async (title, message) => {
     try {
-      const res = await fetch('\/api/sync/notifications', {
+      const res = await fetch(`${API_URL}/api/sync/notifications`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -263,7 +263,7 @@ export function ClubSyncProvider({ children }) {
   // Clear/Mark notification read
   const markNotificationRead = async (id) => {
     try {
-      const res = await fetch(`\/api/sync/notifications/${id}/read`, {
+      const res = await fetch(`${API_URL}/api/sync/notifications/${id}/read`, {
         method: 'PUT',
         headers: { Authorization: `Bearer ${token}` }
       })
@@ -277,7 +277,7 @@ export function ClubSyncProvider({ children }) {
 
   const createClub = async (name, description, category) => {
     try {
-      const res = await fetch('\/api/clubs', {
+      const res = await fetch(`${API_URL}/api/clubs`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -297,7 +297,7 @@ export function ClubSyncProvider({ children }) {
   // Join a Club
   const joinClub = async (clubId) => {
     try {
-      const res = await fetch(`\/api/clubs/${clubId}/join`, {
+      const res = await fetch(`${API_URL}/api/clubs/${clubId}/join`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` }
       })
@@ -314,7 +314,7 @@ export function ClubSyncProvider({ children }) {
   // Leave a Club
   const leaveClub = async (clubId) => {
     try {
-      const res = await fetch(`\/api/clubs/${clubId}/leave`, {
+      const res = await fetch(`${API_URL}/api/clubs/${clubId}/leave`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` }
       })
@@ -331,7 +331,7 @@ export function ClubSyncProvider({ children }) {
   // Update Member Role
   const updateMemberRole = async (clubId, userId, role) => {
     try {
-      const res = await fetch(`\/api/clubs/${clubId}/members/${userId}/role`, {
+      const res = await fetch(`${API_URL}/api/clubs/${clubId}/members/${userId}/role`, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
@@ -356,7 +356,7 @@ export function ClubSyncProvider({ children }) {
   // RSVP Event
   const rsvpEvent = async (eventId) => {
     try {
-      const res = await fetch(`\/api/events/${eventId}/rsvp`, {
+      const res = await fetch(`${API_URL}/api/events/${eventId}/rsvp`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` }
       })
@@ -372,7 +372,7 @@ export function ClubSyncProvider({ children }) {
   // Cancel RSVP
   const cancelRsvp = async (eventId) => {
     try {
-      const res = await fetch(`\/api/events/${eventId}/rsvp`, {
+      const res = await fetch(`${API_URL}/api/events/${eventId}/rsvp`, {
         method: 'POST', // Same endpoint toggles or we can assume it removes if exists
         headers: { Authorization: `Bearer ${token}` }
       })
@@ -392,7 +392,7 @@ export function ClubSyncProvider({ children }) {
   // Add Constitution Version
   const addConstitutionVersion = async (clubId, title, content, version) => {
     try {
-      const res = await fetch(`\/api/clubs/${clubId}/constitution`, {
+      const res = await fetch(`${API_URL}/api/clubs/${clubId}/constitution`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -416,7 +416,7 @@ export function ClubSyncProvider({ children }) {
   // Schedule a Meeting
   const addMeeting = async (clubId, { title, date, time, location, description }) => {
     try {
-      const res = await fetch(`\/api/clubs/${clubId}/meetings`, {
+      const res = await fetch(`${API_URL}/api/clubs/${clubId}/meetings`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -440,7 +440,7 @@ export function ClubSyncProvider({ children }) {
   // Update Minutes and AI summary
   const updateMeetingMinutes = async (meetingId, minutes) => {
     try {
-      const res = await fetch('\/api/ai/summarize', {
+      const res = await fetch(`${API_URL}/api/ai/summarize`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -462,7 +462,7 @@ export function ClubSyncProvider({ children }) {
   // Create Election
   const createElection = async (clubId, title, description, candidateNames) => {
     try {
-      const res = await fetch('\/api/elections', {
+      const res = await fetch(`${API_URL}/api/elections`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -489,7 +489,7 @@ export function ClubSyncProvider({ children }) {
   // Cast Vote
   const castVote = async (electionId, candidateId) => {
     try {
-      const res = await fetch(`\/api/elections/${electionId}/vote`, {
+      const res = await fetch(`${API_URL}/api/elections/${electionId}/vote`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -519,7 +519,7 @@ export function ClubSyncProvider({ children }) {
   // Add Task
   const addTask = async (clubId, { title, description, assignee_id, due_date }) => {
     try {
-      const res = await fetch('\/api/tasks', {
+      const res = await fetch(`${API_URL}/api/tasks`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -548,7 +548,7 @@ export function ClubSyncProvider({ children }) {
   // Update Task Status
   const updateTaskStatus = async (taskId, status) => {
     try {
-      const res = await fetch(`\/api/tasks/${taskId}/status`, {
+      const res = await fetch(`${API_URL}/api/tasks/${taskId}/status`, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
@@ -585,7 +585,7 @@ export function ClubSyncProvider({ children }) {
 
     const fileSize = (file.size / (1024 * 1024)).toFixed(2) + ' MB'
 
-    const res = await fetch(`\/api/clubs/${clubId}/documents`, {
+    const res = await fetch(`${API_URL}/api/clubs/${clubId}/documents`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -612,7 +612,7 @@ export function ClubSyncProvider({ children }) {
   // Ask AI Assistant
   const askAI = async (clubId, question) => {
     try {
-      const res = await fetch('\/api/ai/chat', {
+      const res = await fetch(`${API_URL}/api/ai/chat`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
