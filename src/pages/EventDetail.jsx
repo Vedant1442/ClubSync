@@ -1,12 +1,21 @@
+import React from 'react'
 import { useParams, Link } from 'react-router-dom'
+import { toast } from 'sonner'
 import { ArrowLeft, Calendar, Clock, MapPin, Users, CheckCircle, Share2 } from 'lucide-react'
-import { useState } from 'react'
-import { events, clubs } from '../data/mock'
+import { useClubSync } from '../context/ClubSyncContext'
+import { SkeletonPage } from '../components/Skeleton'
 
 export default function EventDetail() {
   const { id } = useParams()
-  const event = events.find(e => e.id === Number(id))
-  const [rsvpd, setRsvpd] = useState(false)
+  const eventId = Number(id)
+  
+  const { events, clubs, eventMembers, currentUser, toggleRSVP, isUserRSVPed, loading } = useClubSync()
+
+  if (loading) {
+    return <SkeletonPage />
+  }
+
+  const event = events.find(e => e.id === eventId)
 
   if (!event) {
     return (
@@ -17,9 +26,19 @@ export default function EventDetail() {
     )
   }
 
-  const club = clubs.find(c => c.id === event.clubId)
-  const spotsLeft = event.maxAttendees - event.attendees
-  const fillPercent = (event.attendees / event.maxAttendees) * 100
+  const club = clubs.find(c => c.id === event.club_id)
+  const isRSVPed = eventMembers.some(em => em.event_id === event.id && em.user_id === currentUser.id)
+  const attendeesCount = eventMembers.filter(em => em.event_id === event.id).length
+  const spotsLeft = event.max_attendees - attendeesCount
+  const fillPercent = (attendeesCount / event.max_attendees) * 100
+
+  const handleRsvpToggle = async () => {
+    try {
+      await toggleRSVP(event.id)
+    } catch (e) {
+      toast.error("Failed to RSVP")
+    }
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 pb-24 md:pb-8">
@@ -27,7 +46,7 @@ export default function EventDetail() {
         <ArrowLeft size={16} /> Back to events
       </Link>
 
-      <div className="bg-white rounded-2xl border border-border overflow-hidden mb-6">
+      <div className="bg-white dark:bg-surface rounded-2xl border border-border overflow-hidden mb-6">
         <div className="h-32 md:h-44 relative" style={{ background: `${club?.color || '#6c5ce7'}18` }}>
           <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
           <div className="absolute top-4 right-4 flex gap-2">
@@ -72,7 +91,7 @@ export default function EventDetail() {
               <Users size={18} className="text-primary shrink-0" />
               <div>
                 <div className="text-xs text-text-secondary">Capacity</div>
-                <div className="text-sm font-medium">{event.attendees}/{event.maxAttendees}</div>
+                <div className="text-sm font-medium">{attendeesCount}/{event.max_attendees}</div>
               </div>
             </div>
           </div>
@@ -82,7 +101,7 @@ export default function EventDetail() {
           {/* Capacity bar */}
           <div className="mb-6">
             <div className="flex items-center justify-between text-sm mb-2">
-              <span className="text-text-secondary">{event.attendees} attending</span>
+              <span className="text-text-secondary">{attendeesCount} attending</span>
               <span className={spotsLeft <= 5 ? 'text-orange-500 font-medium' : 'text-green-600'}>
                 {spotsLeft} spots left
               </span>
@@ -94,14 +113,14 @@ export default function EventDetail() {
 
           <div className="flex gap-3">
             <button
-              onClick={() => setRsvpd(!rsvpd)}
+              onClick={handleRsvpToggle}
               className={`px-6 py-3 rounded-xl font-semibold text-sm transition-colors flex items-center gap-2 ${
-                rsvpd
+                isRSVPed
                   ? 'bg-green-50 text-green-600 border border-green-200'
                   : 'bg-primary text-white hover:bg-primary-dark'
               }`}
             >
-              {rsvpd ? <><CheckCircle size={18} /> RSVP'd</> : 'RSVP Now'}
+              {isRSVPed ? <><CheckCircle size={18} /> RSVP'd</> : 'RSVP Now'}
             </button>
             <button className="px-4 py-3 rounded-xl font-medium text-sm border border-border hover:bg-surface-muted transition-colors flex items-center gap-2">
               <Share2 size={16} /> Share

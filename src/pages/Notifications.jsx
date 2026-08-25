@@ -1,13 +1,23 @@
+import React from 'react'
 import { Bell, CheckCheck } from 'lucide-react'
-import { useState } from 'react'
-import { notifications } from '../data/mock'
+import { useClubSync } from '../context/ClubSyncContext'
+import { SkeletonPage } from '../components/Skeleton'
+import EmptyState from '../components/EmptyState'
 
 export default function Notifications() {
-  const [items, setItems] = useState(notifications)
+  const { notifications, markNotificationRead, loading } = useClubSync()
 
-  const markAllRead = () => setItems(prev => prev.map(n => ({ ...n, read: true })))
-  const toggleRead = (id) => setItems(prev => prev.map(n => n.id === id ? { ...n, read: !n.read } : n))
-  const unreadCount = items.filter(n => !n.read).length
+  const markAllRead = () => {
+    notifications.forEach(n => {
+      if (!n.read) markNotificationRead(n.id)
+    })
+  }
+
+  const unreadCount = notifications.filter(n => !n.read).length
+
+  if (loading) {
+    return <SkeletonPage />
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 pb-24 md:pb-8">
@@ -27,10 +37,10 @@ export default function Notifications() {
       </div>
 
       <div className="space-y-2">
-        {items.map(n => (
+        {notifications.map(n => (
           <button
             key={n.id}
-            onClick={() => toggleRead(n.id)}
+            onClick={() => !n.read && markNotificationRead(n.id)}
             className={`w-full text-left flex items-start gap-4 p-4 rounded-xl border transition-colors ${
               n.read
                 ? 'bg-white border-border hover:bg-surface-dim'
@@ -54,11 +64,12 @@ export default function Notifications() {
         ))}
       </div>
 
-      {items.length === 0 && (
-        <div className="text-center py-16 text-text-secondary">
-          <Bell size={40} className="mx-auto mb-4 opacity-40" />
-          <p className="font-medium">No notifications</p>
-        </div>
+      {notifications.length === 0 && (
+        <EmptyState 
+          icon={Bell} 
+          title="No notifications" 
+          description="You're all caught up! Check back later." 
+        />
       )}
     </div>
   )

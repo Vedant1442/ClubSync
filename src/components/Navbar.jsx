@@ -1,5 +1,6 @@
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { LayoutDashboard, Users, Calendar, User, Settings, Bell, LogOut } from 'lucide-react'
+import { useClubSync } from '../context/ClubSyncContext'
 
 const links = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -10,6 +11,14 @@ const links = [
 
 export default function Navbar() {
   const location = useLocation()
+  const navigate = useNavigate()
+  const { notifications, logout } = useClubSync()
+  const unreadCount = notifications.filter(n => !n.read).length
+
+  const handleLogout = async () => {
+    await logout()
+    navigate('/login')
+  }
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-lg border-b border-border">
@@ -42,11 +51,16 @@ export default function Navbar() {
         <div className="flex items-center gap-2">
           <Link to="/notifications" className="relative p-2 rounded-lg hover:bg-surface-muted transition-colors text-text-secondary">
             <Bell size={20} />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full" />
+            {unreadCount > 0 && (
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full" />
+            )}
           </Link>
           <Link to="/settings" className="p-2 rounded-lg hover:bg-surface-muted transition-colors text-text-secondary">
             <Settings size={20} />
           </Link>
+          <button onClick={handleLogout} className="p-2 rounded-lg hover:bg-red-50 hover:text-red-500 transition-colors text-text-secondary" title="Sign out">
+            <LogOut size={20} />
+          </button>
         </div>
       </div>
 

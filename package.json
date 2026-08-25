@@ -22,10 +22,15 @@
   },
   "homepage": "https://github.com/Vedant1442/ClubSync#readme",
   "dependencies": {
+    "@clerk/react": "^6.14.5",
+    "@supabase/supabase-js": "^2.112.0",
+    "@tanstack/react-query": "^5.102.3",
+    "framer-motion": "^13.1.1",
     "lucide-react": "^1.28.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "react-router-dom": "^7.18.2"
+    "react-router-dom": "^7.18.2",
+    "sonner": "^2.0.8"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",
