@@ -666,7 +666,7 @@ export default function ClubDetail() {
 
             <div className="space-y-4">
               {/* Schedule form */}
-              {isOfficer ? (
+              {true ? (
                 <div className="bg-white dark:bg-surface rounded-2xl border border-border p-5 shadow-sm">
                   <h3 className="font-semibold text-sm mb-4">Schedule New Meeting</h3>
                   <form onSubmit={handleScheduleMeeting} className="space-y-3">
