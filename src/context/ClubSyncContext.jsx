@@ -85,11 +85,11 @@ export function ClubSyncProvider({ children }) {
         const data = await res.json()
         if (res.ok) {
           setCurrentUser({ ...data.user, name: data.user.full_name, role: 'member' })
-        } else {
+        } else if (res.status === 401 || res.status === 403) {
           logout()
         }
       } catch (e) {
-        logout()
+        console.error("Network error during auth fetch:", e)
       } finally {
         setAuthLoading(false)
       }
