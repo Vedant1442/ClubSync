@@ -567,7 +567,26 @@ export default function ClubDetail() {
         {activeTab === 'meetings' && (
           <div className="grid lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-4">
-              <h2 className="font-semibold text-lg">Meeting Schedule</h2>
+              <div className="flex items-center justify-between">
+                <h2 className="font-semibold text-lg">Meeting Schedule</h2>
+                <button
+                  onClick={async () => {
+                    const { data } = await addMeeting(clubId, {
+                      title: `Instant Meeting - ${new Date().toLocaleTimeString()}`,
+                      date: new Date().toISOString(),
+                      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                      location: 'Virtual',
+                      description: 'Instant meeting started right now.'
+                    });
+                    if (data?.id) {
+                      navigate(`/clubs/${clubId}/meetings/${data.id}/room`);
+                    }
+                  }}
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-sm transition-colors flex items-center gap-2"
+                >
+                  <Plus size={14} /> Instant Meeting
+                </button>
+              </div>
               {clubMeetings.length > 0 ? (
                 <div className="space-y-3">
                   {clubMeetings.map(m => (

@@ -139,10 +139,10 @@ router.post('/:id/constitution', requireAuth, async (req, res) => {
 // ADD MEETING
 router.post('/:id/meetings', requireAuth, async (req, res) => {
   try {
-    const { title, date, minutes } = req.body;
+    const { title, date, time, location, description, minutes } = req.body;
     const { rows } = await db.query(
-      'INSERT INTO meetings (club_id, title, date, minutes, created_by) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-      [req.params.id, title, date, minutes, req.user.id]
+      'INSERT INTO meetings (club_id, title, date, time, location, description, minutes, created_by) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
+      [req.params.id, title, date, time, location, description, minutes, req.user.id]
     );
     res.json(rows[0]);
   } catch (err) {
