@@ -4,7 +4,7 @@ import { toast } from 'sonner'
 import { 
   Users, Clock, MapPin, Calendar, ArrowLeft, UserPlus, Mail, 
   BookOpen, FileText, CheckSquare, MessageSquare, Shield, HelpCircle, 
-  Upload, FolderPlus, Download, CheckCircle, Play, Plus, Trash2, Edit3, Send
+  Upload, FolderPlus, Download, CheckCircle, Play, Plus, Trash2, Edit3, Send, Video
 } from 'lucide-react'
 import { useClubSync } from '../context/ClubSyncContext'
 import { SkeletonPage } from '../components/Skeleton'
@@ -569,23 +569,25 @@ export default function ClubDetail() {
             <div className="lg:col-span-2 space-y-4">
               <div className="flex items-center justify-between">
                 <h2 className="font-semibold text-lg">Meeting Schedule</h2>
-                <button
-                  onClick={async () => {
-                    const { data } = await addMeeting(clubId, {
-                      title: `Instant Meeting - ${new Date().toLocaleTimeString()}`,
-                      date: new Date().toISOString(),
-                      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                      location: 'Virtual',
-                      description: 'Instant meeting started right now.'
-                    });
-                    if (data?.id) {
-                      navigate(`/clubs/${clubId}/meetings/${data.id}/room`);
-                    }
-                  }}
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-sm transition-colors flex items-center gap-2"
-                >
-                  <Plus size={14} /> Instant Meeting
-                </button>
+                {isOfficer && (
+                  <button
+                    onClick={async () => {
+                      const { data } = await addMeeting(clubId, {
+                        title: `Instant Meeting - ${new Date().toLocaleTimeString()}`,
+                        date: new Date().toISOString(),
+                        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                        location: 'Virtual',
+                        description: 'Instant meeting started right now.'
+                      });
+                      if (data?.id) {
+                        navigate(`/clubs/${clubId}/meetings/${data.id}/room`);
+                      }
+                    }}
+                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-sm transition-colors flex items-center gap-2"
+                  >
+                    <Plus size={14} /> Instant Meeting
+                  </button>
+                )}
               </div>
               {clubMeetings.length > 0 ? (
                 <div className="space-y-3">
@@ -604,12 +606,22 @@ export default function ClubDetail() {
                         </div>
                         
                         <div className="pt-2">
-                          <button
-                            onClick={() => navigate(`/clubs/${clubId}/meetings/${m.id}/room`)}
-                            className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[10px] font-semibold transition-colors shadow-sm"
-                          >
-                            Join Video Call
-                          </button>
+                          <div className="shrink-0 flex items-start gap-2">
+                            {isOfficer && !m.minutes && (
+                              <button 
+                                onClick={() => setSelectedMeetingId(m.id)}
+                                className="bg-primary/10 text-primary border border-primary/20 px-3 py-1.5 rounded-xl text-xs font-semibold hover:bg-primary/20 transition-colors flex items-center gap-1"
+                              >
+                                <FileText size={12} /> Log Minutes
+                              </button>
+                            )}
+                            <button
+                              onClick={() => navigate(`/clubs/${clubId}/meetings/${m.id}/room`)}
+                              className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-[11px] font-bold transition-colors shadow-sm flex items-center gap-1.5"
+                            >
+                              <Video size={12} /> Join Video Call
+                            </button>
+                          </div>
                         </div>
 
                         {/* Collapsible Minutes */}
@@ -685,7 +697,7 @@ export default function ClubDetail() {
 
             <div className="space-y-4">
               {/* Schedule form */}
-              {true ? (
+              {isOfficer ? (
                 <div className="bg-white dark:bg-surface rounded-2xl border border-border p-5 shadow-sm">
                   <h3 className="font-semibold text-sm mb-4">Schedule New Meeting</h3>
                   <form onSubmit={handleScheduleMeeting} className="space-y-3">

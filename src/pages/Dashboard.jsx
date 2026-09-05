@@ -9,7 +9,7 @@ const MotionLink = motion(Link)
 import { SkeletonPage } from '../components/Skeleton'
 import EmptyState from '../components/EmptyState'
 export default function Dashboard() {
-  const { clubs, events, clubMemberships, eventMembers, tasks, currentUser, loading } = useClubSync()
+  const { clubs, events, clubMemberships, eventMembers, tasks, meetings = [], documents = [], currentUser, loading } = useClubSync()
 
   if (loading) {
     return <SkeletonPage />
@@ -18,6 +18,25 @@ export default function Dashboard() {
   const myClubs = clubs.filter(c => clubMemberships.some(m => m.club_id === c.id))
   const upcomingEvents = events.filter(e => eventMembers.some(em => em.event_id === e.id))
   const myTasks = tasks.filter(t => t.assignee_id === currentUser.id && t.status !== 'done')
+
+  // Generate Recent Activity from my clubs
+  const myClubIds = myClubs.map(c => c.id)
+  const recentActivity = [
+    ...meetings.filter(m => myClubIds.includes(m.club_id)).map(m => ({
+      type: 'meeting',
+      clubId: m.club_id,
+      title: `New Meeting: ${m.title}`,
+      message: m.description || `Meeting scheduled for ${new Date(m.date).toLocaleDateString()}`,
+      date: m.created_at || m.date
+    })),
+    ...documents.filter(d => myClubIds.includes(d.club_id)).map(d => ({
+      type: 'document',
+      clubId: d.club_id,
+      title: `New Document: ${d.name}`,
+      message: `Uploaded a ${d.file_size} document in ${d.folder_path || 'root'}`,
+      date: d.created_at || new Date().toISOString()
+    }))
+  ].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5)
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 pb-24 md:pb-8">
@@ -87,23 +106,29 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Announcements */}
+          {/* Recent Activity */}
           <div>
-            <h2 className="font-semibold text-lg mb-4">Announcements</h2>
+            <h2 className="font-semibold text-lg mb-4">Recent Activity</h2>
             <div className="space-y-3">
-              {announcements.map(a => {
-                const club = clubs.find(c => c.id === a.clubId)
-                return (
-                  <div key={a.id} className="bg-white dark:bg-surface rounded-xl p-4 border border-border">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs font-medium text-primary">{club?.name}</span>
-                      <span className="text-xs text-text-secondary">· {a.date}</span>
+              {recentActivity.length === 0 ? (
+                <p className="text-xs text-text-secondary bg-white dark:bg-surface border border-border rounded-xl p-4 text-center">
+                  No recent activity to show.
+                </p>
+              ) : (
+                recentActivity.map((activity, idx) => {
+                  const club = clubs.find(c => c.id === activity.clubId)
+                  return (
+                    <div key={idx} className="bg-white dark:bg-surface rounded-xl p-4 border border-border">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-[10px] bg-primary/10 text-primary font-medium px-2 py-0.5 rounded-full">{club?.name || 'Unknown Club'}</span>
+                        <span className="text-xs text-text-secondary">• {new Date(activity.date).toLocaleDateString()}</span>
+                      </div>
+                      <div className="font-medium text-sm">{activity.title}</div>
+                      <p className="text-xs text-text-secondary mt-1">{activity.message}</p>
                     </div>
-                    <div className="font-medium text-sm">{a.title}</div>
-                    <p className="text-xs text-text-secondary mt-1">{a.message}</p>
-                  </div>
-                )
-              })}
+                  )
+                })
+              )}
             </div>
           </div>
         </div>

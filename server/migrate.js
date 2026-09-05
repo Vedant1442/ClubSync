@@ -96,6 +96,7 @@ async function migrate() {
         description TEXT,
         minutes TEXT,
         ai_summary TEXT,
+        meeting_url TEXT,
         created_by UUID REFERENCES users(id) ON DELETE SET NULL,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );

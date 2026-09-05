@@ -1,6 +1,7 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, Users, Calendar, User, Settings, Bell, LogOut } from 'lucide-react'
+import { LayoutDashboard, Users, Calendar, User, Settings, Bell, LogOut, Moon, Sun } from 'lucide-react'
 import { useClubSync } from '../context/ClubSyncContext'
+import { useState, useEffect } from 'react'
 
 const links = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -14,6 +15,20 @@ export default function Navbar() {
   const navigate = useNavigate()
   const { notifications, logout } = useClubSync()
   const unreadCount = notifications.filter(n => !n.read).length
+
+  const [isDark, setIsDark] = useState(() => {
+    return document.documentElement.classList.contains('dark') || localStorage.theme === 'dark'
+  })
+
+  useEffect(() => {
+    if (isDark) {
+      document.documentElement.classList.add('dark')
+      localStorage.theme = 'dark'
+    } else {
+      document.documentElement.classList.remove('dark')
+      localStorage.theme = 'light'
+    }
+  }, [isDark])
 
   const handleLogout = async () => {
     await logout()
@@ -49,6 +64,13 @@ export default function Navbar() {
         </div>
 
         <div className="flex items-center gap-2">
+          <button 
+            onClick={() => setIsDark(!isDark)} 
+            className="p-2 rounded-lg hover:bg-surface-muted transition-colors text-text-secondary" 
+            title="Toggle Theme"
+          >
+            {isDark ? <Sun size={20} /> : <Moon size={20} />}
+          </button>
           <Link to="/notifications" className="relative p-2 rounded-lg hover:bg-surface-muted transition-colors text-text-secondary">
             <Bell size={20} />
             {unreadCount > 0 && (
