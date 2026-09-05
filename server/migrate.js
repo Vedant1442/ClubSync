@@ -91,7 +91,12 @@ async function migrate() {
         club_id UUID REFERENCES clubs(id) ON DELETE CASCADE,
         title TEXT NOT NULL,
         date TIMESTAMP WITH TIME ZONE NOT NULL,
+        time TEXT,
+        location TEXT,
+        description TEXT,
         minutes TEXT,
+        ai_summary TEXT,
+        created_by UUID REFERENCES users(id) ON DELETE SET NULL,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
     `);
