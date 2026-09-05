@@ -18,7 +18,7 @@ export default function Profile() {
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 pb-24 md:pb-8">
       {/* Profile Card */}
-      <div className="bg-white rounded-2xl border border-border overflow-hidden mb-6">
+      <div className="bg-white dark:bg-surface rounded-2xl border border-border overflow-hidden mb-6">
         <div className="h-28 bg-gradient-to-r from-primary/20 to-primary/5" />
         <div className="px-6 pb-6 -mt-10 relative">
           <div className="flex flex-col sm:flex-row sm:items-end gap-4">
@@ -69,7 +69,7 @@ export default function Profile() {
                 <Link
                   key={club.id}
                   to={`/clubs/${club.id}`}
-                  className="flex items-center gap-3 bg-white rounded-xl p-4 border border-border hover:shadow-md transition-shadow"
+                  className="flex items-center gap-3 bg-white dark:bg-surface rounded-xl p-4 border border-border hover:shadow-md transition-shadow"
                 >
                   <div className="w-11 h-11 rounded-xl flex items-center justify-center text-white font-bold text-sm shrink-0" style={{ background: club.color }}>
                     {club.name.charAt(0)}
@@ -102,12 +102,12 @@ export default function Profile() {
           <div className="space-y-3">
             {myEvents.length > 0 ? (
               myEvents.map(event => {
-                const club = clubs.find(c => c.id === event.clubId)
+                const club = clubs.find(c => c.id === event.club_id)
                 return (
                   <Link
                     key={event.id}
                     to={`/events/${event.id}`}
-                    className="flex items-center gap-3 bg-white rounded-xl p-4 border border-border hover:shadow-md transition-shadow"
+                    className="flex items-center gap-3 bg-white dark:bg-surface rounded-xl p-4 border border-border hover:shadow-md transition-shadow"
                   >
                     <div className="w-11 h-11 rounded-xl flex flex-col items-center justify-center text-white shrink-0" style={{ background: club?.color || '#6c5ce7' }}>
                       <span className="text-[9px] font-medium leading-none">{new Date(event.date).toLocaleDateString('en-US', { month: 'short' })}</span>

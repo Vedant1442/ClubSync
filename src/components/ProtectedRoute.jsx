@@ -1,15 +1,12 @@
 import { Navigate } from 'react-router-dom'
 import { useClubSync } from '../context/ClubSyncContext'
+import { SkeletonPage } from './Skeleton'
 
 export default function ProtectedRoute({ children }) {
   const { currentUser, loading } = useClubSync()
 
   if (loading) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center">
-        <p className="text-sm font-medium animate-pulse">Loading...</p>
-      </div>
-    )
+    return <SkeletonPage />
   }
 
   if (!currentUser) {
