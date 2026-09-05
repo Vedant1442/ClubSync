@@ -170,6 +170,42 @@ async function migrate() {
       );
     `);
 
+    // TRANSACTIONS
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS "Transaction" (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        club_id UUID REFERENCES clubs(id) ON DELETE CASCADE,
+        user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+        amount DECIMAL NOT NULL,
+        description TEXT,
+        status TEXT DEFAULT 'completed',
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // RATINGS
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS "Rating" (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        club_id UUID REFERENCES clubs(id) ON DELETE CASCADE,
+        user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+        score INTEGER CHECK (score >= 1 AND score <= 5),
+        review TEXT,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // MESSAGES
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS "Message" (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        club_id UUID REFERENCES clubs(id) ON DELETE CASCADE,
+        sender_id UUID REFERENCES users(id) ON DELETE CASCADE,
+        content TEXT NOT NULL,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
     await client.query('COMMIT');
     console.log('Migration completed successfully');
   } catch (e) {

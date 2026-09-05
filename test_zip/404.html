@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>ClubSync</title>
+    <script>
+      // GitHub Pages SPA redirect
+      var repo = '/ClubSync';
+      var path = window.location.pathname;
+      if (path.indexOf(repo) === 0) {
+        path = path.slice(repo.length);
+      }
+      var search = window.location.search || '';
+      var hash = window.location.hash || '';
+      // Redirect to index.html?/path
+      window.location.replace(repo + '/?/' + path.slice(1) + search + hash);
+    </script>
+  </head>
+  <body></body>
+</html>

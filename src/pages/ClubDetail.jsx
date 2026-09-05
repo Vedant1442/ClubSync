@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { 
   Users, Clock, MapPin, Calendar, ArrowLeft, UserPlus, Mail, 
@@ -20,6 +20,7 @@ const getClubColor = (name = '') => {
 
 export default function ClubDetail() {
   const { id } = useParams()
+  const navigate = useNavigate()
   const clubId = id  // UUID string — do NOT convert to Number
   
   const { 
@@ -581,6 +582,15 @@ export default function ClubDetail() {
                         <div className="flex gap-4 text-[10px] text-text-secondary pt-2">
                           <span className="flex items-center gap-1"><Clock size={12} /> {m.date} at {m.time}</span>
                           <span className="flex items-center gap-1"><MapPin size={12} /> {m.location}</span>
+                        </div>
+                        
+                        <div className="pt-2">
+                          <button
+                            onClick={() => navigate(`/clubs/${clubId}/meetings/${m.id}/room`)}
+                            className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[10px] font-semibold transition-colors shadow-sm"
+                          >
+                            Join Video Call
+                          </button>
                         </div>
 
                         {/* Collapsible Minutes */}

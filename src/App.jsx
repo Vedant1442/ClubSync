@@ -16,6 +16,7 @@ const EventDetail = lazy(() => import('./pages/EventDetail'))
 const Profile = lazy(() => import('./pages/Profile'))
 const Notifications = lazy(() => import('./pages/Notifications'))
 const Settings = lazy(() => import('./pages/Settings'))
+const MeetingRoom = lazy(() => import('./pages/MeetingRoom'))
 
 import PageTransition from './components/PageTransition'
 
@@ -56,6 +57,13 @@ export default function App() {
         <Route path="/profile" element={dashboardLayout(Profile)} />
         <Route path="/notifications" element={dashboardLayout(Notifications)} />
         <Route path="/settings" element={dashboardLayout(Settings)} />
+        <Route path="/clubs/:clubId/meetings/:meetingId/room" element={
+          <ProtectedRoute>
+            <PageTransition>
+              <MeetingRoom />
+            </PageTransition>
+          </ProtectedRoute>
+        } />
       </Routes>
     </Suspense>
     </>
