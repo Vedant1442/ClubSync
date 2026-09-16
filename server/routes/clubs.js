@@ -139,11 +139,12 @@ router.post('/:id/constitution', requireAuth, async (req, res) => {
 // ADD MEETING
 router.post('/:id/meetings', requireAuth, async (req, res) => {
   try {
+    const club_id = req.params.id;
     const { title, date, time, location, description, minutes } = req.body;
     const { rows } = await db.query(
       'INSERT INTO meetings (club_id, title, date, time, location, description, minutes, created_by) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
       [
-        req.params.id, 
+        club_id, 
         title, 
         date, 
         time || null, 
@@ -153,7 +154,50 @@ router.post('/:id/meetings', requireAuth, async (req, res) => {
         req.user.id
       ]
     );
-    res.json(rows[0]);
+
+    const newMeeting = rows[0];
+
+    // EMAIL NOTIFICATION
+    try {
+      const clubRes = await db.query('SELECT name FROM clubs WHERE id = $1', [club_id]);
+      const membersRes = await db.query(
+        'SELECT u.email, u.name FROM users u JOIN club_members cm ON u.id = cm.user_id WHERE cm.club_id = $1',
+        [club_id]
+      );
+      
+      if (clubRes.rows.length > 0 && membersRes.rows.length > 0) {
+        const clubName = clubRes.rows[0].name;
+        const { sendEmail } = require('../utils/email');
+        
+        // Send email to all members
+        const bccList = membersRes.rows.map(m => m.email).join(', ');
+        
+        await sendEmail({
+          to: '"Club Members" <noreply@clubsync.app>',
+          bcc: bccList,
+          subject: `New Meeting Scheduled: ${title}`,
+          text: `A new meeting has been scheduled for ${clubName}.\n\nTitle: ${title}\nDate: ${date}\nTime: ${time || 'TBD'}\nLocation: ${location || 'TBD'}\n\n${description || ''}\n\nSee you there!`,
+          html: `
+            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 10px;">
+              <h2 style="color: #6c5ce7;">New Meeting: ${clubName}</h2>
+              <p>A new meeting has been scheduled!</p>
+              <div style="background-color: #f8fafc; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                <h3 style="margin-top: 0; margin-bottom: 10px;">${title}</h3>
+                <p style="margin: 0; color: #475569;"><strong>Date:</strong> ${new Date(date).toLocaleDateString()}</p>
+                <p style="margin: 0; color: #475569;"><strong>Time:</strong> ${time || 'TBD'}</p>
+                <p style="margin: 0; color: #475569;"><strong>Location:</strong> ${location || 'TBD'}</p>
+                <p style="margin-top: 10px; color: #475569;">${description || ''}</p>
+              </div>
+              <a href="https://clubsync.app/clubs/${club_id}" style="display: inline-block; background-color: #6c5ce7; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px; font-weight: bold;">View Details</a>
+            </div>
+          `
+        });
+      }
+    } catch (emailErr) {
+      console.error('Failed to send meeting emails:', emailErr);
+    }
+
+    res.json(newMeeting);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed' });
