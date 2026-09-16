@@ -53,6 +53,7 @@ export function ClubSyncProvider({ children }) {
   const tasks = syncData?.tasks || []
   const notifications = syncData?.notifications || []
   const transactions = syncData?.transactions || []
+  const messages = syncData?.messages || []
 
   const updateCache = (updater) => {
     queryClient.setQueryData(['sync', currentUser?.id], (old) => {
@@ -414,6 +415,29 @@ export function ClubSyncProvider({ children }) {
     return { error: 'Failed' }
   }
 
+  // Post Chat Message
+  const addMessage = async (clubId, contentText) => {
+    try {
+      const res = await fetch(`${API_URL}/api/clubs/${clubId}/messages`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}` 
+        },
+        body: JSON.stringify({ content: contentText })
+      })
+      if (res.ok) {
+        const newMsg = await res.json()
+        updateCache(old => ({ ...old, messages: [...(old.messages || []), newMsg] }))
+        fetchData()
+        return { data: newMsg }
+      }
+    } catch (e) {
+      console.error(e)
+    }
+    return { error: 'Failed' }
+  }
+
   // Log Treasury Transaction
   const addTransaction = async (clubId, { amount, type, description }) => {
     try {
@@ -676,6 +700,7 @@ export function ClubSyncProvider({ children }) {
         tasks,
         notifications,
         transactions,
+        messages,
         loading,
         currentUser,
         getUserClubRole,
@@ -691,6 +716,7 @@ export function ClubSyncProvider({ children }) {
         isUserRSVPed,
         addConstitutionVersion,
         addTransaction,
+        addMessage,
         addMeeting,
         updateMeetingMinutes,
         createElection,

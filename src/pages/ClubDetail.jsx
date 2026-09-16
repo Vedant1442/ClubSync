@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { 
   Users, Clock, MapPin, Calendar, ArrowLeft, UserPlus, Mail, 
-  BookOpen, FileText, CheckSquare, MessageSquare, Shield, HelpCircle, 
+  BookOpen, FileText, CheckSquare, MessageSquare, MessageCircle, Shield, HelpCircle,  
   Upload, FolderPlus, Download, CheckCircle, Play, Plus, Trash2, Edit3, Send, Video, DollarSign, TrendingUp, TrendingDown
 } from 'lucide-react'
 import { useClubSync } from '../context/ClubSyncContext'
@@ -25,10 +25,10 @@ export default function ClubDetail() {
   
   const { 
     clubs, events, constitutions, meetings, elections, 
-    electionCandidates, electionVotes, documents, tasks, transactions, 
+    electionCandidates, electionVotes, documents, tasks, transactions, messages,
     clubMemberships, allClubMembers, isClubOfficer, getUserClubRole, 
     joinClub, leaveClub, updateMemberRole, rsvpEvent, cancelRsvp,
-    addConstitutionVersion, addTransaction, addMeeting, updateMeetingMinutes, 
+    addConstitutionVersion, addTransaction, addMessage, addMeeting, updateMeetingMinutes, 
     createElection, castVote, addTask, updateTaskStatus, 
     uploadDocument, askAI, loading, refreshData, currentUser
   } = useClubSync()
@@ -290,6 +290,7 @@ export default function ClubDetail() {
           { id: 'documents', label: 'Documents', icon: FileText },
           { id: 'tasks', label: 'Tasks (Kanban)', icon: CheckSquare },
           { id: 'treasury', label: 'Treasury', icon: DollarSign },
+          { id: 'chat', label: 'Group Chat', icon: MessageCircle },
           { id: 'assistant', label: 'Knowledge AI', icon: MessageSquare },
           { id: 'settings', label: 'Settings', icon: Shield },
         ].map(t => {
@@ -1250,6 +1251,74 @@ export default function ClubDetail() {
                   </div>
                 )}
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* GROUP CHAT TAB */}
+        {activeTab === 'chat' && (
+          <div className="max-w-4xl mx-auto bg-white dark:bg-surface border border-border rounded-2xl shadow-sm flex flex-col h-[600px]">
+            {/* Header */}
+            <div className="p-4 border-b border-border bg-surface-dim flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <MessageCircle size={20} className="text-primary" />
+                <div>
+                  <h3 className="font-semibold">Club Group Chat</h3>
+                  <p className="text-xs text-text-secondary">Talk with other members in real-time</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Messages Area */}
+            <div className="flex-1 p-6 overflow-y-auto space-y-4 flex flex-col-reverse">
+              {messages.filter(m => m.club_id === club.id).length === 0 && (
+                <div className="text-center py-10 text-text-secondary text-sm">
+                  No messages yet. Say hi! 👋
+                </div>
+              )}
+              {messages.filter(m => m.club_id === club.id).sort((a,b) => new Date(b.created_at) - new Date(a.created_at)).map(msg => {
+                const isMe = msg.user_id === currentUser?.id;
+                const author = allClubMembers.find(m => m.user_id === msg.user_id)?.full_name || 'Unknown User';
+                return (
+                  <div key={msg.id} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-[10px] font-semibold text-text-secondary">{isMe ? 'You' : author}</span>
+                      <span className="text-[9px] text-text-secondary">{new Date(msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                    </div>
+                    <div className={`px-4 py-2 rounded-2xl max-w-[80%] text-sm ${isMe ? 'bg-primary text-white rounded-br-none' : 'bg-surface-muted text-text rounded-bl-none border border-border'}`}>
+                      {msg.content}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Input Area */}
+            <div className="p-4 border-t border-border bg-surface-dim">
+              <form 
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  const input = e.target.elements.message;
+                  if (!input.value.trim()) return;
+                  const val = input.value;
+                  input.value = '';
+                  await addMessage(club.id, val);
+                }}
+                className="flex gap-2"
+              >
+                <input 
+                  type="text" 
+                  name="message"
+                  placeholder="Message the club..." 
+                  className="flex-1 px-4 py-2.5 rounded-xl border border-border bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
+                />
+                <button 
+                  type="submit"
+                  className="bg-primary hover:bg-primary-dark text-white p-2.5 rounded-xl transition-colors shrink-0 flex items-center justify-center"
+                >
+                  <Send size={18} />
+                </button>
+              </form>
             </div>
           </div>
         )}

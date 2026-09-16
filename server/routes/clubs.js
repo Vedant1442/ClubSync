@@ -249,4 +249,33 @@ router.post('/:id/transactions', requireAuth, async (req, res) => {
   }
 });
 
+// Post a Chat Message
+router.post('/:id/messages', requireAuth, async (req, res) => {
+  try {
+    const { content } = req.body;
+    const { id: clubId } = req.params;
+    const userId = req.user.id;
+
+    // Check if member
+    const memberCheck = await db.query(
+      'SELECT id FROM club_members WHERE club_id = $1 AND user_id = $2',
+      [clubId, userId]
+    );
+    if (memberCheck.rows.length === 0) {
+      return res.status(403).json({ error: 'Only members can chat' });
+    }
+
+    const result = await db.query(
+      `INSERT INTO club_messages (club_id, user_id, content) 
+       VALUES ($1, $2, $3) RETURNING *`,
+      [clubId, userId, content]
+    );
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 module.exports = router;
