@@ -6,6 +6,9 @@ import { ClubSyncProvider } from './context/ClubSyncContext'
 import App from './App'
 import './index.css'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { registerSW } from 'virtual:pwa-register'
+
+registerSW({ immediate: true })
 
 const queryClient = new QueryClient()
 
