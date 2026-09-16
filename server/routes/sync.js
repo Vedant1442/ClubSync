@@ -50,6 +50,8 @@ router.get('/', requireAuth, async (req, res) => {
       db.query('SELECT * FROM documents'),
       db.query('SELECT * FROM tasks'),
       db.query('SELECT * FROM notifications WHERE user_id = $1', [userId]),
+      db.query('SELECT * FROM club_transactions'),
+      db.query('SELECT * FROM club_messages ORDER BY created_at ASC'),
     ]);
 
     res.json({

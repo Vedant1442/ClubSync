@@ -1,49 +1,69 @@
 import React, { useState } from 'react'
+import { Search, Plus, X, Loader2, Users } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { Search, Users, Plus, X, Loader2 } from 'lucide-react'
+import { motion } from 'framer-motion'
 import { useClubSync } from '../context/ClubSyncContext'
+import { useInfiniteQuery } from '@tanstack/react-query'
+import EmptyState from '../components/EmptyState'
+import { SkeletonPage } from '../components/Skeleton'
 
-const getClubColor = (name = '') => {
-  const colors = ['#6366f1','#8b5cf6','#ec4899','#f59e0b','#10b981','#3b82f6','#ef4444','#14b8a6']
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+
+const CATEGORIES = ['Technology', 'Arts', 'Sports', 'Academic', 'Cultural', 'Social', 'Other']
+
+const getClubColor = (name) => {
+  const colors = ['#6c5ce7', '#00b894', '#0984e3', '#e84393', '#fdcb6e', '#e17055', '#d63031']
   let hash = 0
-  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash)
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash)
+  }
   return colors[Math.abs(hash) % colors.length]
 }
 
-const CATEGORIES = ['Technology', 'Arts', 'Academic', 'Social', 'Sports', 'Cultural', 'Other']
-
-import { SkeletonPage } from '../components/Skeleton'
-import EmptyState from '../components/EmptyState'
-import { motion } from 'framer-motion'
 const MotionLink = motion(Link)
 
 export default function Clubs() {
-  const { clubs, loading, createClub } = useClubSync()
+  const { createClub } = useClubSync()
   const [search, setSearch] = useState('')
   const [activeCategory, setActiveCategory] = useState('All')
-  const [sortBy, setSortBy] = useState('Most Members')
+  const [sortBy, setSortBy] = useState('Newest')
+
+  const fetchClubs = async ({ pageParam = 1 }) => {
+    const res = await fetch(`${API_URL}/api/clubs?page=${pageParam}&limit=12&search=${encodeURIComponent(search)}&category=${encodeURIComponent(activeCategory)}&sortBy=${encodeURIComponent(sortBy)}`)
+    if (!res.ok) throw new Error('Network error')
+    return res.json()
+  }
+
+  const {
+    data,
+    error,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    status
+  } = useInfiniteQuery({
+    queryKey: ['clubs', search, activeCategory, sortBy],
+    queryFn: fetchClubs,
+    getNextPageParam: (lastPage) => {
+      if (lastPage.meta.page < lastPage.meta.totalPages) {
+        return lastPage.meta.page + 1
+      }
+      return undefined
+    }
+  })
+
+  const filtered = data ? data.pages.flatMap(page => page.data) : []
+  const loading = status === 'pending'
+  
   const [showCreate, setShowCreate] = useState(false)
-  const [creating, setCreating] = useState(false)
   const [newClub, setNewClub] = useState({ name: '', description: '', category: 'Technology' })
+  const [creating, setCreating] = useState(false)
+  
+  const categories = ['All', ...CATEGORIES]
 
   if (loading) {
     return <SkeletonPage />
   }
-
-  const categories = ['All', ...new Set(clubs.map(c => c.category).filter(Boolean))]
-
-  const filtered = clubs.filter(c => {
-    const matchSearch = c.name.toLowerCase().includes(search.toLowerCase()) ||
-      (c.description || '').toLowerCase().includes(search.toLowerCase())
-    const matchCategory = activeCategory === 'All' || c.category === activeCategory
-    return matchSearch && matchCategory
-  }).sort((a, b) => {
-    if (sortBy === 'Most Members') return (b.members_count || 0) - (a.members_count || 0)
-    if (sortBy === 'Newest') return new Date(b.created_at) - new Date(a.created_at)
-    if (sortBy === 'Oldest') return new Date(a.created_at) - new Date(b.created_at)
-    if (sortBy === 'A-Z') return a.name.localeCompare(b.name)
-    return 0
-  })
 
   const handleCreateClub = async (e) => {
     e.preventDefault()
@@ -206,6 +226,19 @@ export default function Clubs() {
           )
         })}
       </div>
+
+      {/* Infinite Scroll / Load More */}
+      {hasNextPage && (
+        <div className="mt-8 flex justify-center">
+          <button
+            onClick={() => fetchNextPage()}
+            disabled={isFetchingNextPage}
+            className="px-6 py-2.5 bg-surface-muted hover:bg-surface-dim border border-border rounded-full text-sm font-medium transition-colors"
+          >
+            {isFetchingNextPage ? 'Loading more...' : 'Load More'}
+          </button>
+        </div>
+      )}
 
       {filtered.length === 0 && (
         <EmptyState 

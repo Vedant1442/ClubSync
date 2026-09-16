@@ -19,11 +19,54 @@ const requireAuth = (req, res, next) => {
   }
 };
 
-// GET all clubs
+// GET all clubs (Paginated, Searchable, Filterable)
 router.get('/', async (req, res) => {
   try {
-    const { rows } = await db.query('SELECT * FROM clubs ORDER BY created_at DESC');
-    res.json(rows);
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = (page - 1) * limit;
+    
+    const search = req.query.search || '';
+    const category = req.query.category && req.query.category !== 'All' ? req.query.category : null;
+
+    let query = 'SELECT * FROM clubs WHERE 1=1';
+    const params = [];
+    
+    if (search) {
+      params.push(`%${search}%`);
+      query += ` AND name ILIKE $${params.length}`;
+    }
+    
+    if (category) {
+      params.push(category);
+      query += ` AND category = $${params.length}`;
+    }
+    
+    // Sort logic
+    const sortBy = req.query.sortBy || 'Newest';
+    let orderClause = 'ORDER BY created_at DESC';
+    if (sortBy === 'Oldest') orderClause = 'ORDER BY created_at ASC';
+    if (sortBy === 'A-Z') orderClause = 'ORDER BY name ASC';
+    // Most Members requires a JOIN, let's keep it simple for MVP or just sort by created_at.
+    
+    // Total count
+    const countQuery = query.replace('SELECT *', 'SELECT COUNT(*)');
+    const countRes = await db.query(countQuery, params);
+    const total = parseInt(countRes.rows[0].count);
+
+    // Fetch data
+    query += ` ${orderClause} LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
+    const { rows } = await db.query(query, [...params, limit, offset]);
+
+    res.json({
+      data: rows,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      }
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Failed to fetch clubs' });
