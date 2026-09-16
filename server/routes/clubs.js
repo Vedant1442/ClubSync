@@ -175,4 +175,34 @@ router.post('/:id/documents', requireAuth, async (req, res) => {
   }
 });
 
+// Log a Treasury Transaction
+router.post('/:id/transactions', requireAuth, async (req, res) => {
+  try {
+    const { amount, description, type } = req.body;
+    const { id: clubId } = req.params;
+    const userId = req.user.id;
+
+    // Check if officer
+    const memberCheck = await db.query(
+      'SELECT role FROM club_members WHERE club_id = $1 AND user_id = $2',
+      [clubId, userId]
+    );
+    const role = memberCheck.rows[0]?.role;
+    if (!role || !['President', 'Vice President', 'Treasurer', 'Secretary'].includes(role)) {
+      return res.status(403).json({ error: 'Only officers can add transactions' });
+    }
+
+    const result = await db.query(
+      `INSERT INTO club_transactions (club_id, amount, description, type, created_by) 
+       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+      [clubId, amount, description, type, userId]
+    );
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 module.exports = router;

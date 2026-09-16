@@ -52,6 +52,7 @@ export function ClubSyncProvider({ children }) {
   const documents = syncData?.documents || []
   const tasks = syncData?.tasks || []
   const notifications = syncData?.notifications || []
+  const transactions = syncData?.transactions || []
 
   const updateCache = (updater) => {
     queryClient.setQueryData(['sync', currentUser?.id], (old) => {
@@ -413,6 +414,33 @@ export function ClubSyncProvider({ children }) {
     return { error: 'Failed' }
   }
 
+  // Log Treasury Transaction
+  const addTransaction = async (clubId, { amount, type, description }) => {
+    try {
+      const res = await fetch(`${API_URL}/api/clubs/${clubId}/transactions`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}` 
+        },
+        body: JSON.stringify({ amount, type, description })
+      })
+      if (res.ok) {
+        const newTx = await res.json()
+        updateCache(old => ({ ...old, transactions: [...(old.transactions || []), newTx] }))
+        toast.success('Transaction logged!')
+        fetchData()
+        return { data: newTx }
+      } else {
+        const err = await res.json()
+        toast.error(err.error || 'Failed to log transaction')
+      }
+    } catch (e) {
+      console.error(e)
+    }
+    return { error: 'Failed' }
+  }
+
   // Schedule a Meeting
   const addMeeting = async (clubId, { title, date, time, location, description }) => {
     try {
@@ -647,6 +675,7 @@ export function ClubSyncProvider({ children }) {
         documents,
         tasks,
         notifications,
+        transactions,
         loading,
         currentUser,
         getUserClubRole,
@@ -661,6 +690,7 @@ export function ClubSyncProvider({ children }) {
         cancelRsvp,
         isUserRSVPed,
         addConstitutionVersion,
+        addTransaction,
         addMeeting,
         updateMeetingMinutes,
         createElection,

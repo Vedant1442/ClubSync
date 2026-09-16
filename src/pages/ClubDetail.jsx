@@ -4,7 +4,7 @@ import { toast } from 'sonner'
 import { 
   Users, Clock, MapPin, Calendar, ArrowLeft, UserPlus, Mail, 
   BookOpen, FileText, CheckSquare, MessageSquare, Shield, HelpCircle, 
-  Upload, FolderPlus, Download, CheckCircle, Play, Plus, Trash2, Edit3, Send, Video
+  Upload, FolderPlus, Download, CheckCircle, Play, Plus, Trash2, Edit3, Send, Video, DollarSign, TrendingUp, TrendingDown
 } from 'lucide-react'
 import { useClubSync } from '../context/ClubSyncContext'
 import { SkeletonPage } from '../components/Skeleton'
@@ -25,10 +25,10 @@ export default function ClubDetail() {
   
   const { 
     clubs, events, constitutions, meetings, elections, 
-    electionCandidates, electionVotes, documents, tasks, 
+    electionCandidates, electionVotes, documents, tasks, transactions, 
     clubMemberships, allClubMembers, isClubOfficer, getUserClubRole, 
     joinClub, leaveClub, updateMemberRole, rsvpEvent, cancelRsvp,
-    addConstitutionVersion, addMeeting, updateMeetingMinutes, 
+    addConstitutionVersion, addTransaction, addMeeting, updateMeetingMinutes, 
     createElection, castVote, addTask, updateTaskStatus, 
     uploadDocument, askAI, loading, refreshData, currentUser
   } = useClubSync()
@@ -289,6 +289,7 @@ export default function ClubDetail() {
           { id: 'elections', label: 'Elections', icon: CheckCircle },
           { id: 'documents', label: 'Documents', icon: FileText },
           { id: 'tasks', label: 'Tasks (Kanban)', icon: CheckSquare },
+          { id: 'treasury', label: 'Treasury', icon: DollarSign },
           { id: 'assistant', label: 'Knowledge AI', icon: MessageSquare },
           { id: 'settings', label: 'Settings', icon: Shield },
         ].map(t => {
@@ -1161,6 +1162,94 @@ export default function ClubDetail() {
                   <p className="text-xs">Only club officers can assign tasks.</p>
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* TREASURY TAB */}
+        {activeTab === 'treasury' && (
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row gap-4 justify-between items-start">
+              <div>
+                <h2 className="font-semibold text-lg">Club Treasury</h2>
+                <p className="text-xs text-text-secondary">Track budget, collect dues, and log expenses.</p>
+              </div>
+            </div>
+
+            <div className="grid lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2 space-y-4">
+                <div className="bg-white dark:bg-surface rounded-2xl border border-border p-5">
+                  <h3 className="font-semibold text-sm mb-4">Transaction History</h3>
+                  {transactions.filter(t => t.club_id === club.id).length > 0 ? (
+                    <div className="space-y-2">
+                      {transactions.filter(t => t.club_id === club.id).sort((a,b) => new Date(b.created_at) - new Date(a.created_at)).map(tx => {
+                        const isIncome = tx.type === 'income' || tx.type === 'dues';
+                        return (
+                          <div key={tx.id} className="flex items-center justify-between p-3 border border-border rounded-xl">
+                            <div className="flex items-center gap-3">
+                              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${isIncome ? 'bg-green-500/10 text-green-600' : 'bg-red-500/10 text-red-600'}`}>
+                                {isIncome ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
+                              </div>
+                              <div>
+                                <div className="text-sm font-semibold">{tx.description}</div>
+                                <div className="text-[10px] text-text-secondary">{new Date(tx.created_at).toLocaleDateString()}</div>
+                              </div>
+                            </div>
+                            <div className={`text-sm font-bold ${isIncome ? 'text-green-600' : 'text-red-600'}`}>
+                              {isIncome ? '+' : '-'}{(Number(tx.amount)).toFixed(2)}
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-text-secondary text-center py-8">No transactions logged yet.</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="bg-gradient-to-br from-indigo-600 to-primary text-white rounded-2xl p-6 shadow-md">
+                  <div className="text-sm font-medium text-white/80 mb-1">Total Balance</div>
+                  <div className="text-3xl font-bold">
+                    ${(transactions.filter(t => t.club_id === club.id).reduce((sum, tx) => sum + (tx.type === 'income' || tx.type === 'dues' ? Number(tx.amount) : -Number(tx.amount)), 0)).toFixed(2)}
+                  </div>
+                </div>
+
+                {isOfficer && (
+                  <div className="bg-white dark:bg-surface rounded-2xl border border-border p-5 shadow-sm">
+                    <h3 className="font-semibold text-sm mb-4">Log Transaction</h3>
+                    <form onSubmit={async (e) => {
+                      e.preventDefault();
+                      const amount = e.target.amount.value;
+                      const desc = e.target.desc.value;
+                      const type = e.target.type.value;
+                      await addTransaction(club.id, { amount, description: desc, type });
+                      e.target.reset();
+                    }} className="space-y-3">
+                      <div>
+                        <label className="block text-xs font-medium text-text-secondary mb-1">Type</label>
+                        <select name="type" required className="w-full text-xs p-2.5 rounded-xl border border-border bg-white focus:outline-none">
+                          <option value="income">Income</option>
+                          <option value="expense">Expense</option>
+                          <option value="dues">Member Dues</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-text-secondary mb-1">Amount ($)</label>
+                        <input name="amount" type="number" step="0.01" required placeholder="0.00" className="w-full text-xs p-2.5 rounded-xl border border-border bg-white focus:outline-none" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-text-secondary mb-1">Description</label>
+                        <input name="desc" type="text" required placeholder="e.g. Fall Fest Supplies" className="w-full text-xs p-2.5 rounded-xl border border-border bg-white focus:outline-none" />
+                      </div>
+                      <button type="submit" className="w-full bg-primary hover:bg-primary-dark text-white py-2.5 rounded-xl text-xs font-bold transition-colors">
+                        Save Transaction
+                      </button>
+                    </form>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}

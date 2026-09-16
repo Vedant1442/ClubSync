@@ -35,6 +35,7 @@ router.get('/', requireAuth, async (req, res) => {
       { rows: documents },
       { rows: tasks },
       { rows: notifications },
+      { rows: transactions },
     ] = await Promise.all([
       db.query('SELECT * FROM clubs'),
       db.query('SELECT * FROM events'),
@@ -63,6 +64,7 @@ router.get('/', requireAuth, async (req, res) => {
       documents,
       tasks,
       notifications,
+      transactions,
     });
   } catch (error) {
     console.error('Sync error:', error);
