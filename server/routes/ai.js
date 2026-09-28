@@ -1,33 +1,29 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
-const jwt = require('jsonwebtoken');
 const Groq = require('groq-sdk');
+const { requireAuth } = require('../middleware/auth');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-clubsync-key';
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY || 'mock-key' });
-
-const requireAuth = (req, res, next) => {
-  const token = req.headers.authorization?.split(' ')[1];
-  if (!token) return res.status(401).json({ error: 'Unauthorized' });
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-    req.user = decoded;
-    next();
-  } catch (err) {
-    res.status(401).json({ error: 'Invalid token' });
-  }
-};
+const hasGroqKey = Boolean(process.env.GROQ_API_KEY && process.env.GROQ_API_KEY !== 'mock-key');
+const groq = hasGroqKey ? new Groq({ apiKey: process.env.GROQ_API_KEY }) : null;
 
 // Generate Meeting Summary
 router.post('/summarize', requireAuth, async (req, res) => {
   try {
     const { meetingId, minutes } = req.body;
     
+    if (!meetingId || !minutes || typeof minutes !== 'string' || !minutes.trim()) {
+      return res.status(400).json({ error: 'Valid meeting ID and minutes text are required' });
+    }
+
+    if (minutes.length > 50000) {
+      return res.status(400).json({ error: 'Meeting minutes text is too large (max 50,000 characters)' });
+    }
+
     let summary = '';
     
-    if (!process.env.GROQ_API_KEY || process.env.GROQ_API_KEY === 'mock-key') {
-      summary = "AI Summary (Mock): " + minutes.substring(0, 50) + "...";
+    if (!groq) {
+      summary = "AI Summary (Mock): " + minutes.trim().substring(0, 150) + "...";
     } else {
       const completion = await groq.chat.completions.create({
         messages: [

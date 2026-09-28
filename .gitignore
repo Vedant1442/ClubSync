@@ -4,5 +4,13 @@ dist
 *.log
 .DS_Store
 
-# Local Netlify folder
+# Local Environment Variables
+.env
+.env.local
+.env.*.local
+server/.env
+server/.env.local
+
+# Local Hosting & Tooling
 .netlify
+graphify-out/

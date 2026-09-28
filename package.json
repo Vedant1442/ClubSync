@@ -1,7 +1,7 @@
 {
   "name": "clubsync",
   "version": "1.0.0",
-  "description": "��#\u0000 \u0000C\u0000l\u0000u\u0000b\u0000S\u0000y\u0000n\u0000c\u0000\r\u0000 \u0000",
+  "description": "ClubSync - University Club & Campus Life Management Platform",
   "main": "index.js",
   "scripts": {
     "dev": "vite",
@@ -13,7 +13,14 @@
     "type": "git",
     "url": "git+https://github.com/Vedant1442/ClubSync.git"
   },
-  "keywords": [],
+  "keywords": [
+    "club-management",
+    "university",
+    "campus",
+    "react",
+    "vite",
+    "tailwind"
+  ],
   "author": "",
   "license": "ISC",
   "type": "module",
