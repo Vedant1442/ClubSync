@@ -94,6 +94,33 @@ export default function Login() {
           </button>
         </form>
 
+        {/* Quick Demo Fill Buttons */}
+        <div className="mt-6 p-4 rounded-2xl bg-[#18181b] border border-[#27272a] text-center">
+          <p className="text-xs font-semibold text-[#a1a1aa] uppercase tracking-wider mb-2.5">Quick Demo Logins</p>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setEmail('officer@clubsync.app');
+                setPassword('Password123!');
+              }}
+              className="px-3 py-2 text-xs font-medium rounded-lg bg-[#27272a] hover:bg-[#3f3f46] text-[#e4e4e7] transition-colors border border-border"
+            >
+              👑 Officer Account
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setEmail('member@clubsync.app');
+                setPassword('Password123!');
+              }}
+              className="px-3 py-2 text-xs font-medium rounded-lg bg-[#27272a] hover:bg-[#3f3f46] text-[#e4e4e7] transition-colors border border-border"
+            >
+              🎓 Member Account
+            </button>
+          </div>
+        </div>
+
         <p className="mt-8 text-center text-[14px] text-[#a1a1aa]">
           No account? <Link to="/register" className="text-white hover:underline font-medium">Sign up</Link>
         </p>
