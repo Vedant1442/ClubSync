@@ -229,8 +229,8 @@ router.post('/:id/constitution', requireAuth, requireOfficer('id'), async (req, 
   }
 });
 
-// ADD MEETING
-router.post('/:id/meetings', requireAuth, requireOfficer('id'), async (req, res) => {
+// ADD MEETING (Available for instant meetings & scheduling)
+router.post('/:id/meetings', requireAuth, async (req, res) => {
   try {
     const club_id = req.params.id;
     let { title, date, time, location, description, minutes } = req.body;
