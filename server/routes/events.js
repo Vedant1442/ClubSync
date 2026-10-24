@@ -548,4 +548,168 @@ router.post('/:id/teams/join', requireAuth, async (req, res) => {
   }
 });
 
+// --- LIVE AUDIENCE Q&A & UPVOTING SYSTEM (Slido Style) ---
+
+// GET Live Event Q&A Questions
+router.get('/:id/qa', async (req, res) => {
+  try {
+    const eventId = req.params.id;
+    let currentUserId = null;
+
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        const jwt = require('jsonwebtoken');
+        const decoded = jwt.verify(authHeader.split(' ')[1], process.env.JWT_SECRET || 'clubsync-secret-key-change-in-production');
+        currentUserId = decoded.id;
+      } catch (e) {}
+    }
+
+    const query = `
+      SELECT 
+        q.*,
+        CASE 
+          WHEN $2::uuid IS NOT NULL AND uv.user_id IS NOT NULL THEN true 
+          ELSE false 
+        END as has_upvoted
+      FROM event_qa_questions q
+      LEFT JOIN event_qa_upvotes uv ON uv.question_id = q.id AND uv.user_id = $2
+      WHERE q.event_id = $1
+      ORDER BY q.is_pinned DESC, q.upvotes_count DESC, q.created_at DESC
+    `;
+    const { rows } = await db.query(query, [eventId, currentUserId]);
+    res.json(rows);
+  } catch (err) {
+    console.error('[Get Event QA Error]:', err);
+    res.status(500).json({ error: 'Failed to fetch event Q&A questions' });
+  }
+});
+
+// POST New Question to Live Q&A
+router.post('/:id/qa', requireAuth, async (req, res) => {
+  try {
+    const eventId = req.params.id;
+    const { content, is_anonymous } = req.body;
+    const userId = req.user.id;
+
+    if (!content || !String(content).trim()) {
+      return res.status(400).json({ error: 'Question content cannot be empty' });
+    }
+
+    const userRes = await db.query(`SELECT full_name, college_id, branch FROM users WHERE id = $1`, [userId]);
+    const user = userRes.rows[0];
+
+    const authorName = is_anonymous ? 'Anonymous PICTian' : (user?.full_name || 'Student');
+    const authorBranch = is_anonymous ? null : (user?.branch || null);
+
+    const insertQuery = `
+      INSERT INTO event_qa_questions (event_id, user_id, author_name, author_branch, content)
+      VALUES ($1, $2, $3, $4, $5)
+      RETURNING *
+    `;
+    const { rows } = await db.query(insertQuery, [eventId, userId, authorName, authorBranch, String(content).trim()]);
+    res.status(201).json({ ...rows[0], has_upvoted: false });
+  } catch (err) {
+    console.error('[Post QA Question Error]:', err);
+    res.status(500).json({ error: 'Failed to submit question' });
+  }
+});
+
+// Toggle Upvote on a Question
+router.post('/:id/qa/:questionId/upvote', requireAuth, async (req, res) => {
+  const client = await db.pool.connect();
+  try {
+    const { questionId } = req.params;
+    const userId = req.user.id;
+
+    await client.query('BEGIN');
+
+    const existing = await client.query(
+      `SELECT * FROM event_qa_upvotes WHERE question_id = $1 AND user_id = $2`,
+      [questionId, userId]
+    );
+
+    let hasUpvoted = false;
+    if (existing.rows.length > 0) {
+      await client.query(
+        `DELETE FROM event_qa_upvotes WHERE question_id = $1 AND user_id = $2`,
+        [questionId, userId]
+      );
+      await client.query(
+        `UPDATE event_qa_questions SET upvotes_count = GREATEST(upvotes_count - 1, 0) WHERE id = $1`,
+        [questionId]
+      );
+      hasUpvoted = false;
+    } else {
+      await client.query(
+        `INSERT INTO event_qa_upvotes (question_id, user_id) VALUES ($1, $2)`,
+        [questionId, userId]
+      );
+      await client.query(
+        `UPDATE event_qa_questions SET upvotes_count = upvotes_count + 1 WHERE id = $1`,
+        [questionId]
+      );
+      hasUpvoted = true;
+    }
+
+    const updatedQ = await client.query(`SELECT * FROM event_qa_questions WHERE id = $1`, [questionId]);
+    await client.query('COMMIT');
+
+    res.json({ ...updatedQ.rows[0], has_upvoted: hasUpvoted });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('[Toggle Upvote Error]:', err);
+    res.status(500).json({ error: 'Failed to toggle upvote' });
+  } finally {
+    client.release();
+  }
+});
+
+// Toggle Pin on Question
+router.patch('/:id/qa/:questionId/pin', requireAuth, async (req, res) => {
+  try {
+    const { questionId } = req.params;
+    const { rows } = await db.query(
+      `UPDATE event_qa_questions SET is_pinned = NOT is_pinned WHERE id = $1 RETURNING *`,
+      [questionId]
+    );
+    if (rows.length === 0) return res.status(404).json({ error: 'Question not found' });
+    res.json(rows[0]);
+  } catch (err) {
+    console.error('[Pin QA Question Error]:', err);
+    res.status(500).json({ error: 'Failed to pin question' });
+  }
+});
+
+// Mark Question as Answered
+router.patch('/:id/qa/:questionId/answer', requireAuth, async (req, res) => {
+  try {
+    const { questionId } = req.params;
+    const { answer_text } = req.body;
+    const { rows } = await db.query(
+      `UPDATE event_qa_questions 
+       SET is_answered = true, answer_text = $1 
+       WHERE id = $2 RETURNING *`,
+      [answer_text ? String(answer_text).trim() : 'Answered live by speaker on stage.', questionId]
+    );
+    if (rows.length === 0) return res.status(404).json({ error: 'Question not found' });
+    res.json(rows[0]);
+  } catch (err) {
+    console.error('[Answer QA Question Error]:', err);
+    res.status(500).json({ error: 'Failed to answer question' });
+  }
+});
+
+// Delete Question
+router.delete('/:id/qa/:questionId', requireAuth, async (req, res) => {
+  try {
+    const { questionId } = req.params;
+    await db.query(`DELETE FROM event_qa_questions WHERE id = $1`, [questionId]);
+    res.json({ success: true });
+  } catch (err) {
+    console.error('[Delete QA Question Error]:', err);
+    res.status(500).json({ error: 'Failed to delete question' });
+  }
+});
+
 module.exports = router;

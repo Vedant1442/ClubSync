@@ -20,6 +20,7 @@ import EventTeamSection from '../components/EventTeamSection'
 import EventAIConciergeModal from '../components/EventAIConciergeModal'
 import { getGoogleCalendarUrl, downloadICSFile } from '../utils/calendarSync'
 import CampusVenueMapModal from '../components/CampusVenueMapModal'
+import EventLiveQAModal from '../components/EventLiveQAModal'
 
 export default function EventDetail() {
   const { id } = useParams()
@@ -34,6 +35,7 @@ export default function EventDetail() {
   const [isScannerModalOpen, setIsScannerModalOpen] = useState(false)
   const [isBroadcastModalOpen, setIsBroadcastModalOpen] = useState(false)
   const [isVenueModalOpen, setIsVenueModalOpen] = useState(false)
+  const [isLiveQAModalOpen, setIsLiveQAModalOpen] = useState(false)
   const [broadcasts, setBroadcasts] = useState([])
   const [exportingAttendees, setExportingAttendees] = useState(false)
 
@@ -463,6 +465,16 @@ export default function EventDetail() {
               <span>Ask Event AI</span>
             </button>
 
+            {/* Live Audience Q&A (Slido Style) */}
+            <button
+              onClick={() => setIsLiveQAModalOpen(true)}
+              className="px-4 py-3 rounded-xl font-bold text-xs bg-indigo-50 text-indigo-700 border border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-400 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-950/60 transition-colors flex items-center gap-1.5 shadow-sm"
+              title="Participate in live questions and upvoting during the event"
+            >
+              <MessageSquare size={16} className="text-indigo-600 dark:text-indigo-400" />
+              <span>Live Q&A</span>
+            </button>
+
             {/* Campus Venue Navigator */}
             <button
               onClick={() => setIsVenueModalOpen(true)}
@@ -603,6 +615,16 @@ export default function EventDetail() {
         onClose={() => setIsVenueModalOpen(false)}
         event={event}
         club={club}
+      />
+
+      {/* Live Audience Q&A Modal */}
+      <EventLiveQAModal
+        isOpen={isLiveQAModalOpen}
+        onClose={() => setIsLiveQAModalOpen(false)}
+        event={event}
+        club={club}
+        currentUser={currentUser}
+        isOfficer={isOfficer}
       />
     </div>
   )
