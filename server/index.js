@@ -127,6 +127,7 @@ const aiRouter = require('./routes/ai');
 const paymentsRouter = require('./routes/payments');
 const recruitmentRouter = require('./routes/recruitment');
 const inventoryRouter = require('./routes/inventory');
+const sponsorshipsRouter = require('./routes/sponsorships');
 
 app.use('/api/auth', authRouter);
 app.use('/api/clubs', clubsRouter);
@@ -138,6 +139,7 @@ app.use('/api/ai', aiRouter);
 app.use('/api/payments', paymentsRouter);
 app.use('/api/recruitment', recruitmentRouter);
 app.use('/api/inventory', inventoryRouter);
+app.use('/api/sponsorships', sponsorshipsRouter);
 
 // 9. 404 Handler for Unknown API Endpoints
 app.use('/api', (req, res) => {

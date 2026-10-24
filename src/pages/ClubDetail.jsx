@@ -15,7 +15,8 @@ import PaymentReceiptModal from '../components/PaymentReceiptModal'
 import ClubRecruitmentTab from '../components/ClubRecruitmentTab'
 import ClubAnalyticsTab from '../components/ClubAnalyticsTab'
 import ClubInventoryTab from '../components/ClubInventoryTab'
-import { IndianRupee, QrCode, Receipt as ReceiptIcon, Sparkles, ShieldCheck, BarChart3, Package } from 'lucide-react'
+import ClubSponsorshipTab from '../components/ClubSponsorshipTab'
+import { IndianRupee, QrCode, Receipt as ReceiptIcon, Sparkles, ShieldCheck, BarChart3, Package, Handshake } from 'lucide-react'
 
 // Generate a deterministic color from a string
 const getClubColor = (name = '') => {
@@ -352,6 +353,7 @@ export default function ClubDetail() {
           { id: 'tasks', label: 'Tasks (Kanban)', icon: CheckSquare },
           { id: 'treasury', label: 'Treasury', icon: DollarSign },
           { id: 'inventory', label: 'Lab & Equipment', icon: Package },
+          { id: 'sponsorships', label: 'Sponsorships & CRM', icon: Handshake },
           { id: 'chat', label: 'Group Chat', icon: MessageCircle },
           { id: 'assistant', label: 'Knowledge AI', icon: MessageSquare },
           { id: 'settings', label: 'Settings', icon: Shield },
@@ -1244,6 +1246,11 @@ export default function ClubDetail() {
         {/* LAB INVENTORY & EQUIPMENT TAB */}
         {activeTab === 'inventory' && (
           <ClubInventoryTab club={club} isOfficer={isOfficer} currentUser={currentUser} />
+        )}
+
+        {/* CORPORATE SPONSORSHIP & CRM TAB */}
+        {activeTab === 'sponsorships' && (
+          <ClubSponsorshipTab clubId={club.id} clubEvents={clubEvents} isOfficer={isOfficer} />
         )}
 
         {/* TREASURY TAB */}
