@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
-import { Search, Plus, X, Loader2, Users } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Search, Plus, X, Loader2, Users, Trophy, Sparkles } from 'lucide-react'
+import CampusLeaderboard from '../components/CampusLeaderboard'
+import { Link, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useClubSync } from '../context/ClubSyncContext'
 import { useInfiniteQuery } from '@tanstack/react-query'
@@ -20,10 +21,12 @@ const getClubColor = (name) => {
   return colors[Math.abs(hash) % colors.length]
 }
 
-const MotionLink = motion(Link)
+const MotionLink = motion.create ? motion.create(Link) : motion(Link)
 
 export default function Clubs() {
   const { createClub } = useClubSync()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const currentTab = searchParams.get('tab') || 'directory'
   const [search, setSearch] = useState('')
   const [activeCategory, setActiveCategory] = useState('All')
   const [sortBy, setSortBy] = useState('Newest')
@@ -77,23 +80,56 @@ export default function Clubs() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 pb-24 md:pb-8">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold">Clubs</h1>
-          <p className="text-text-secondary mt-1">Discover and join campus clubs</p>
+          <h1 className="text-2xl font-bold">Campus Clubs & Societies</h1>
+          <p className="text-text-secondary mt-1">Explore official PICT student organizations and inter-club leaderboards</p>
         </div>
         <button
           onClick={() => setShowCreate(true)}
-          className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-primary-dark transition-colors"
+          className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-primary-dark transition-colors self-start sm:self-auto"
         >
           <Plus size={16} /> Create Club
         </button>
       </div>
 
+      {/* Primary Navigation Tabs */}
+      <div className="flex items-center gap-2 mb-6 border-b border-border pb-3">
+        <button
+          onClick={() => setSearchParams({})}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
+            currentTab === 'directory'
+              ? 'bg-primary text-white shadow-sm'
+              : 'text-text-secondary hover:text-text hover:bg-surface-dim'
+          }`}
+        >
+          <Users size={16} /> Club Directory
+        </button>
+        <button
+          onClick={() => setSearchParams({ tab: 'leaderboard' })}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
+            currentTab === 'leaderboard'
+              ? 'bg-gradient-to-r from-amber-500 to-yellow-500 text-white shadow-md shadow-amber-500/20'
+              : 'text-text-secondary hover:text-text hover:bg-surface-dim'
+          }`}
+        >
+          <Trophy size={16} className={currentTab === 'leaderboard' ? 'text-white' : 'text-amber-500'} />
+          Campus Impact Leaderboard
+          <span className="text-[10px] uppercase font-black px-1.5 py-0.5 rounded-full bg-amber-400/30 text-amber-900 dark:text-amber-200 ml-1">
+            Live
+          </span>
+        </button>
+      </div>
+
+      {currentTab === 'leaderboard' ? (
+        <CampusLeaderboard />
+      ) : (
+        <>
+
       {/* Create Club Modal */}
       {showCreate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl border border-border">
+          <div className="bg-white dark:bg-surface rounded-2xl p-6 w-full max-w-md shadow-xl border border-border">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold">Create New Club</h2>
               <button onClick={() => setShowCreate(false)} className="text-text-secondary hover:text-text">
@@ -154,13 +190,13 @@ export default function Clubs() {
             placeholder="Search clubs..."
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-border bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary text-sm"
+            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-border bg-white dark:bg-surface text-text focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary text-sm"
           />
         </div>
         <select
           value={sortBy}
           onChange={e => setSortBy(e.target.value)}
-          className="px-4 py-2.5 rounded-xl border border-border bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm min-w-[140px]"
+          className="px-4 py-2.5 rounded-xl border border-border bg-white dark:bg-surface text-text focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm min-w-[140px]"
         >
           <option value="Most Members">Most Members</option>
           <option value="Newest">Newest</option>
@@ -178,7 +214,7 @@ export default function Clubs() {
             className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
               activeCategory === cat
                 ? 'bg-primary text-white'
-                : 'bg-white border border-border text-text-secondary hover:bg-surface-muted'
+                : 'bg-white dark:bg-surface border border-border text-text-secondary hover:bg-surface-muted'
             }`}
           >
             {cat}
@@ -246,6 +282,8 @@ export default function Clubs() {
           title="No clubs found" 
           description="Try a different search or create a new club!" 
         />
+      )}
+        </>
       )}
     </div>
   )

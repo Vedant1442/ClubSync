@@ -1,11 +1,11 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import { Calendar, Users, ArrowRight, Clock, MapPin, TrendingUp, CheckSquare } from 'lucide-react'
+import { Calendar, Users, ArrowRight, Clock, MapPin, TrendingUp, CheckSquare, Trophy, Sparkles } from 'lucide-react'
 import { useClubSync } from '../context/ClubSyncContext'
 import { announcements } from '../data/mock' // Keep static announcements or let them remain mock
 import { motion } from 'framer-motion'
 
-const MotionLink = motion(Link)
+const MotionLink = motion.create ? motion.create(Link) : motion(Link)
 import { SkeletonPage } from '../components/Skeleton'
 import EmptyState from '../components/EmptyState'
 export default function Dashboard() {
@@ -17,7 +17,7 @@ export default function Dashboard() {
 
   const myClubs = clubs.filter(c => clubMemberships.some(m => m.club_id === c.id))
   const upcomingEvents = events.filter(e => eventMembers.some(em => em.event_id === e.id))
-  const myTasks = tasks.filter(t => t.assignee_id === currentUser.id && t.status !== 'done')
+  const myTasks = tasks.filter(t => t.assignee_id === currentUser?.id && t.status !== 'done')
 
   // Generate Recent Activity from my clubs
   const myClubIds = myClubs.map(c => c.id)
@@ -67,6 +67,53 @@ export default function Dashboard() {
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Left Side: My Clubs & Announcements */}
         <div className="lg:col-span-1 space-y-8">
+          {/* Inter-Club Championship Spotlight */}
+          {topClubs.length > 0 && (
+            <div className="bg-gradient-to-br from-amber-500/10 via-surface to-surface border border-amber-500/30 rounded-2xl p-5 shadow-sm">
+              <div className="flex items-center justify-between mb-3.5">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-500 flex items-center justify-center font-bold">
+                    <Trophy size={16} />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-sm text-text leading-tight">Campus Championship</h3>
+                    <p className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold uppercase tracking-wider">Inter-Club Apex</p>
+                  </div>
+                </div>
+                <Link
+                  to="/clubs?tab=leaderboard"
+                  className="text-xs font-bold text-primary hover:underline flex items-center gap-0.5"
+                >
+                  Ranks <ArrowRight size={12} />
+                </Link>
+              </div>
+
+              <div className="space-y-2">
+                {topClubs.map((tc, idx) => (
+                  <Link
+                    key={tc.id}
+                    to={`/clubs/${tc.id}`}
+                    className="flex items-center justify-between p-2.5 rounded-xl bg-surface-dim/80 hover:bg-surface-dim border border-border/60 transition-colors"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <span className="text-sm font-bold w-4 text-center">
+                        {idx === 0 ? '🥇' : idx === 1 ? '🥈' : '🥉'}
+                      </span>
+                      <div className="min-w-0">
+                        <div className="font-semibold text-xs text-text truncate">{tc.name}</div>
+                        <div className="text-[10px] text-text-secondary">{tc.category}</div>
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <span className="text-xs font-black text-amber-500">{tc.impactScore}</span>
+                      <span className="text-[9px] text-text-secondary block">CIS</span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div>
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-semibold text-lg">My Clubs</h2>
@@ -187,7 +234,7 @@ export default function Dashboard() {
                 .slice(0, 4)
                 .map(event => {
                 const club = clubs.find(c => c.id === event.club_id)
-                const isRSVPed = eventMembers.some(em => em.event_id === event.id && em.user_id === currentUser.id)
+                const isRSVPed = eventMembers.some(em => em.event_id === event.id && em.user_id === currentUser?.id)
                 return (
                   <MotionLink
                     whileHover={{ scale: 1.02 }}
@@ -221,7 +268,9 @@ export default function Dashboard() {
                         {new Date(event.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                       </span>
                       {isRSVPed ? (
-                        <span className="bg-green-500/10 text-green-600 px-2 py-0.5 rounded-full font-bold">Going</span>
+                        <span className="bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 px-2 py-0.5 rounded-full font-bold text-[10px]">
+                          ✓ Registered • 🎟️ Pass
+                        </span>
                       ) : (
                         <span className="text-primary font-semibold">RSVP →</span>
                       )}
