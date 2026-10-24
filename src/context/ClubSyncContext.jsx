@@ -54,6 +54,7 @@ export function ClubSyncProvider({ children }) {
   const notifications = syncData?.notifications || []
   const transactions = syncData?.transactions || []
   const messages = syncData?.messages || []
+  const payments = syncData?.payments || []
 
   const updateCache = (updater) => {
     queryClient.setQueryData(['sync', currentUser?.id], (old) => {
@@ -103,7 +104,7 @@ export function ClubSyncProvider({ children }) {
     if (!currentUser) return;
     
     const updateCache = (table, payload) => {
-      queryClient.setQueryData(['sync', currentUser.id], (old) => {
+      queryClient.setQueryData(['sync', currentUser?.id], (old) => {
         if (!old) return old;
         const list = old[table] || [];
         let newList = [...list];
@@ -127,7 +128,7 @@ export function ClubSyncProvider({ children }) {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, p => updateCache('tasks', p))
       .on('postgres_changes', { event: '*', schema: 'public', table: 'meetings' }, p => updateCache('meetings', p))
       .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, p => {
-        if (p.eventType === 'INSERT' && p.new.user_id !== currentUser.id) return;
+        if (p.eventType === 'INSERT' && p.new.user_id !== currentUser?.id) return;
         updateCache('notifications', p);
       })
       .subscribe()
@@ -220,11 +221,11 @@ export function ClubSyncProvider({ children }) {
     
     updateCache(old => {
       const prev = old.eventMembers || [];
-      const existing = prev.some(m => m.event_id === eventId && m.user_id === currentUser.id)
+      const existing = prev.some(m => m.event_id === eventId && m.user_id === currentUser?.id)
       if (existing) {
-        return { ...old, eventMembers: prev.filter(m => !(m.event_id === eventId && m.user_id === currentUser.id)) }
+        return { ...old, eventMembers: prev.filter(m => !(m.event_id === eventId && m.user_id === currentUser?.id)) }
       } else {
-        return { ...old, eventMembers: [...prev, { event_id: eventId, user_id: currentUser.id, status: 'going' }] }
+        return { ...old, eventMembers: [...prev, { event_id: eventId, user_id: currentUser?.id, status: 'going' }] }
       }
     })
     
@@ -304,7 +305,7 @@ export function ClubSyncProvider({ children }) {
         headers: { Authorization: `Bearer ${token}` }
       })
       if (res.ok) {
-        updateCache(old => ({ ...old, clubMemberships: [...(old.clubMemberships || []), { club_id: clubId, user_id: currentUser.id, role: 'Member' }] }))
+        updateCache(old => ({ ...old, clubMemberships: [...(old.clubMemberships || []), { club_id: clubId, user_id: currentUser?.id, role: 'Member' }] }))
         toast.success('Joined club successfully!')
         fetchData()
       }
@@ -321,7 +322,7 @@ export function ClubSyncProvider({ children }) {
         headers: { Authorization: `Bearer ${token}` }
       })
       if (res.ok) {
-        updateCache(old => ({ ...old, clubMemberships: (old.clubMemberships || []).filter(m => !(m.club_id === clubId && m.user_id === currentUser.id)) }))
+        updateCache(old => ({ ...old, clubMemberships: (old.clubMemberships || []).filter(m => !(m.club_id === clubId && m.user_id === currentUser?.id)) }))
         toast.success('Left club successfully')
         fetchData()
       }
@@ -342,7 +343,7 @@ export function ClubSyncProvider({ children }) {
         body: JSON.stringify({ role })
       })
       if (res.ok) {
-        if (userId === currentUser.id) {
+        if (userId === currentUser?.id) {
           updateCache(old => ({ ...old, clubMemberships: (old.clubMemberships || []).map(m => m.club_id === clubId ? { ...m, role } : m) }))
         }
         toast.success('Role updated!')
@@ -388,7 +389,7 @@ export function ClubSyncProvider({ children }) {
   }
 
   const isUserRSVPed = (eventId) => {
-    return eventMembers.some(em => em.event_id === eventId && em.user_id === currentUser.id)
+    return eventMembers.some(em => em.event_id === eventId && em.user_id === currentUser?.id)
   }
 
   // Add Constitution Version
@@ -683,6 +684,51 @@ export function ClubSyncProvider({ children }) {
     }
   }
 
+  // YouPI-PG Zero-Fee UPI Payment Gateway Helpers
+  const createPaymentIntent = async (paymentData) => {
+    const res = await fetch(`${API_URL}/api/payments/create`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify(paymentData)
+    })
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.error || 'Failed to create payment intent')
+    return data
+  }
+
+  const submitUtr = async (paymentId, utr) => {
+    const res = await fetch(`${API_URL}/api/payments/${paymentId}/submit-utr`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ utr })
+    })
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.error || 'Failed to verify UTR')
+    fetchData()
+    return data
+  }
+
+  const updatePaymentStatus = async (paymentId, status) => {
+    const res = await fetch(`${API_URL}/api/payments/${paymentId}/status`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ status })
+    })
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.error || 'Failed to update payment status')
+    fetchData()
+    return data
+  }
+
   return (
     <ClubSyncContext.Provider
       value={{
@@ -701,6 +747,10 @@ export function ClubSyncProvider({ children }) {
         notifications,
         transactions,
         messages,
+        payments,
+        createPaymentIntent,
+        submitUtr,
+        updatePaymentStatus,
         loading,
         currentUser,
         getUserClubRole,

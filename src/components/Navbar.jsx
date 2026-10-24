@@ -36,7 +36,7 @@ export default function Navbar() {
   }
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-lg border-b border-border">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-surface/80 backdrop-blur-lg border-b border-border">
       <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
         <Link to="/dashboard" className="flex items-center gap-2 font-bold text-xl text-primary">
           <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white text-sm">C</div>
@@ -80,14 +80,14 @@ export default function Navbar() {
           <Link to="/settings" className="p-2 rounded-lg hover:bg-surface-muted transition-colors text-text-secondary">
             <Settings size={20} />
           </Link>
-          <button onClick={handleLogout} className="p-2 rounded-lg hover:bg-red-50 hover:text-red-500 transition-colors text-text-secondary" title="Sign out">
+          <button onClick={handleLogout} className="p-2 rounded-lg hover:bg-red-500/10 hover:text-red-500 transition-colors text-text-secondary" title="Sign out">
             <LogOut size={20} />
           </button>
         </div>
       </div>
 
       {/* Mobile bottom nav */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-lg border-t border-border">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white/90 dark:bg-surface/90 backdrop-blur-lg border-t border-border">
         <div className="flex justify-around py-2">
           {links.map(({ to, icon: Icon, label }) => {
             const active = location.pathname.startsWith(to)

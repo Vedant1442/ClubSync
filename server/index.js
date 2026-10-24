@@ -124,6 +124,8 @@ const eventsRouter = require('./routes/events');
 const tasksRouter = require('./routes/tasks');
 const electionsRouter = require('./routes/elections');
 const aiRouter = require('./routes/ai');
+const paymentsRouter = require('./routes/payments');
+const recruitmentRouter = require('./routes/recruitment');
 
 app.use('/api/auth', authRouter);
 app.use('/api/clubs', clubsRouter);
@@ -132,6 +134,8 @@ app.use('/api/events', eventsRouter);
 app.use('/api/tasks', tasksRouter);
 app.use('/api/elections', electionsRouter);
 app.use('/api/ai', aiRouter);
+app.use('/api/payments', paymentsRouter);
+app.use('/api/recruitment', recruitmentRouter);
 
 // 9. 404 Handler for Unknown API Endpoints
 app.use('/api', (req, res) => {

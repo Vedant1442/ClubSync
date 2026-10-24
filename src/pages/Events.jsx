@@ -1,12 +1,12 @@
 import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Search, Calendar, Clock, MapPin, LayoutList, CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Search, Calendar, Clock, MapPin, LayoutList, CalendarDays, ChevronLeft, ChevronRight, Zap } from 'lucide-react'
 import { useClubSync } from '../context/ClubSyncContext'
 import CreateEventModal from '../components/CreateEventModal'
 import { SkeletonPage } from '../components/Skeleton'
 import EmptyState from '../components/EmptyState'
 import { motion } from 'framer-motion'
-const MotionLink = motion(Link)
+const MotionLink = motion.create ? motion.create(Link) : motion(Link)
 
 export default function Events() {
   const { events, clubs, eventMembers, currentUser, clubMemberships, loading } = useClubSync()
@@ -101,14 +101,14 @@ export default function Events() {
             placeholder="Search events..."
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-border bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary text-sm"
+            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-border bg-white dark:bg-surface text-text focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary text-sm"
           />
         </div>
         <div className="flex gap-3">
           <select
             value={timeFilter}
             onChange={e => setTimeFilter(e.target.value)}
-            className="px-4 py-2.5 rounded-xl border border-border bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm w-full sm:w-auto"
+            className="px-4 py-2.5 rounded-xl border border-border bg-white dark:bg-surface text-text focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm w-full sm:w-auto"
           >
             <option value="All Time">All Time</option>
             <option value="Upcoming">Upcoming</option>
@@ -117,7 +117,7 @@ export default function Events() {
           <select
             value={sortBy}
             onChange={e => setSortBy(e.target.value)}
-            className="px-4 py-2.5 rounded-xl border border-border bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm w-full sm:w-auto"
+            className="px-4 py-2.5 rounded-xl border border-border bg-white dark:bg-surface text-text focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm w-full sm:w-auto"
           >
             <option value="Date (Soonest)">Date (Soonest)</option>
             <option value="Date (Latest)">Date (Latest)</option>
@@ -135,7 +135,7 @@ export default function Events() {
             className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
               activeCategory === cat
                 ? 'bg-primary text-white'
-                : 'bg-white border border-border text-text-secondary hover:bg-surface-muted'
+                : 'bg-white dark:bg-surface border border-border text-text-secondary hover:bg-surface-muted'
             }`}
           >
             {cat}
@@ -151,7 +151,7 @@ export default function Events() {
               const attendeesCount = eventMembers.filter(em => em.event_id === event.id).length
               const spotsLeft = event.max_attendees - attendeesCount
               const fillPercent = (attendeesCount / event.max_attendees) * 100
-              const isRSVPed = eventMembers.some(em => em.event_id === event.id && em.user_id === currentUser.id)
+              const isRSVPed = eventMembers.some(em => em.event_id === event.id && em.user_id === currentUser?.id)
 
               return (
                 <MotionLink
@@ -184,6 +184,18 @@ export default function Events() {
                         {club?.name}
                       </span>
                       <span className="text-[10px] text-text-secondary">{event.category}</span>
+                      {Number(event.price) > 0 ? (
+                        <span className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full text-[10px] font-bold">
+                          ₹{event.price}
+                        </span>
+                      ) : (
+                        <span className="bg-blue-500/10 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded-full text-[10px] font-medium">
+                          Free
+                        </span>
+                      )}
+                      <span className="bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-0.5">
+                        <Zap size={10} /> +{event.activity_points || 10} Pts
+                      </span>
                       {isRSVPed && (
                         <span className="bg-green-500/10 text-green-600 px-2 py-0.5 rounded-full text-[10px] font-semibold">Going</span>
                       )}

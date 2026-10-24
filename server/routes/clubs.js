@@ -57,6 +57,115 @@ router.get('/', async (req, res) => {
   }
 });
 
+// GET Inter-Club Leaderboard & Campus Impact Score
+router.get('/leaderboard', async (req, res) => {
+  try {
+    const { category } = req.query;
+    let query = `
+      SELECT 
+        c.id,
+        c.name,
+        c.category,
+        c.color,
+        c.members_count,
+        COUNT(DISTINCT e.id) as events_count,
+        COUNT(DISTINCT em.id) as total_registrations,
+        COUNT(DISTINCT CASE WHEN em.checked_in = true THEN em.id END) as verified_attendees,
+        COALESCE(SUM(CASE WHEN em.checked_in = true THEN COALESCE(e.activity_points, 0) ELSE 0 END), 0) as aicte_points_awarded,
+        (
+          SELECT title FROM events 
+          WHERE club_id = c.id 
+          ORDER BY date DESC LIMIT 1
+        ) as flagship_event
+      FROM clubs c
+      LEFT JOIN events e ON e.club_id = c.id
+      LEFT JOIN event_members em ON em.event_id = e.id
+    `;
+    const params = [];
+    if (category && category !== 'All') {
+      params.push(category);
+      query += ` WHERE c.category = $1`;
+    }
+    query += ` GROUP BY c.id, c.name, c.category, c.color, c.members_count`;
+
+    const { rows } = await db.query(query, params);
+
+    const scored = rows.map(club => {
+      const eventsCount = parseInt(club.events_count) || 0;
+      const registrations = parseInt(club.total_registrations) || 0;
+      const checkins = parseInt(club.verified_attendees) || 0;
+      const aictePoints = parseInt(club.aicte_points_awarded) || 0;
+      const members = parseInt(club.members_count) || 0;
+
+      const eventsPts = eventsCount * 50;
+      const rsvpPts = registrations * 10;
+      const attendancePts = checkins * 25;
+      const aictePts = aictePoints * 5;
+      const memberPts = members * 5;
+
+      const impactScore = eventsPts + rsvpPts + attendancePts + aictePts + memberPts;
+
+      return {
+        id: club.id,
+        name: club.name,
+        category: club.category,
+        color: club.color,
+        membersCount: members,
+        eventsCount,
+        registrations,
+        verifiedAttendees: checkins,
+        aictePointsAwarded: aictePoints,
+        flagshipEvent: club.flagship_event || 'General Club Activities',
+        impactScore,
+        breakdown: {
+          events: eventsPts,
+          rsvp: rsvpPts,
+          attendance: attendancePts,
+          aicte: aictePts,
+          members: memberPts
+        }
+      };
+    });
+
+    // Sort descending by impact score
+    scored.sort((a, b) => b.impactScore - a.impactScore);
+
+    // Assign rank and tier
+    const ranked = scored.map((club, idx) => {
+      const rank = idx + 1;
+      let tier = 'Silver Contender';
+      let badge = '🥉';
+      if (rank === 1) {
+        tier = 'Diamond Apex';
+        badge = '🏆';
+      } else if (rank <= 3) {
+        tier = 'Platinum Tier';
+        badge = rank === 2 ? '🥈' : '🥉';
+      } else if (rank <= 5) {
+        tier = 'Gold Tier';
+        badge = '⭐';
+      }
+
+      return {
+        ...club,
+        rank,
+        tier,
+        badge
+      };
+    });
+
+    res.json({
+      leaderboard: ranked,
+      totalClubs: ranked.length,
+      topClub: ranked[0] || null,
+      generatedAt: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('[Leaderboard Error]:', error);
+    res.status(500).json({ error: 'Failed to fetch inter-club leaderboard' });
+  }
+});
+
 // GET club by ID
 router.get('/:id', async (req, res) => {
   try {

@@ -53,7 +53,7 @@ export default function Landing() {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {features.map(({ icon: Icon, title, desc }) => (
-            <div key={title} className="bg-white rounded-2xl p-6 border border-border hover:shadow-lg transition-shadow">
+            <div key={title} className="bg-white dark:bg-surface rounded-2xl p-6 border border-border hover:shadow-lg transition-shadow">
               <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary mb-4">
                 <Icon size={22} />
               </div>
@@ -65,7 +65,7 @@ export default function Landing() {
       </section>
 
       {/* Stats */}
-      <section className="bg-white border-y border-border">
+      <section className="bg-white dark:bg-surface-dim border-y border-border">
         <div className="max-w-7xl mx-auto px-4 py-16 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
           {[
             { value: '50+', label: 'Active Clubs' },
@@ -96,7 +96,7 @@ export default function Landing() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-border bg-white">
+      <footer className="border-t border-border bg-white dark:bg-surface">
         <div className="max-w-7xl mx-auto px-4 py-8 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-text-secondary">
           <div className="font-semibold text-text">ClubSync</div>
           <div>© 2026 ClubSync. Built for campus communities.</div>

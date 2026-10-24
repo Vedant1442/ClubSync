@@ -22,6 +22,7 @@ router.get('/', requireAuth, async (req, res) => {
       { rows: notifications },
       { rows: transactions },
       { rows: messages },
+      { rows: payments },
     ] = await Promise.all([
       db.query('SELECT * FROM clubs'),
       db.query('SELECT * FROM events'),
@@ -37,6 +38,7 @@ router.get('/', requireAuth, async (req, res) => {
       db.query('SELECT * FROM notifications WHERE user_id = $1', [userId]),
       db.query('SELECT * FROM club_transactions'),
       db.query('SELECT * FROM club_messages ORDER BY created_at ASC'),
+      db.query('SELECT p.*, u.full_name as user_name FROM payments p LEFT JOIN users u ON p.user_id = u.id WHERE p.user_id = $1 OR p.club_id IN (SELECT club_id FROM club_members WHERE user_id = $1) ORDER BY p.created_at DESC', [userId]),
     ]);
 
     res.json({
@@ -54,6 +56,7 @@ router.get('/', requireAuth, async (req, res) => {
       notifications,
       transactions,
       messages,
+      payments,
     });
   } catch (error) {
     console.error('Sync error:', error);

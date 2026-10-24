@@ -43,7 +43,7 @@ export default function Notifications() {
             onClick={() => !n.read && markNotificationRead(n.id)}
             className={`w-full text-left flex items-start gap-4 p-4 rounded-xl border transition-colors ${
               n.read
-                ? 'bg-white border-border hover:bg-surface-dim'
+                ? 'bg-white dark:bg-surface border-border hover:bg-surface-dim'
                 : 'bg-primary/5 border-primary/20 hover:bg-primary/10'
             }`}
           >

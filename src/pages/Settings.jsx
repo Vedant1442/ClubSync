@@ -70,7 +70,7 @@ export default function Settings() {
 
       <div className="space-y-6">
         {sections.map(({ title, icon: Icon, settings }) => (
-          <div key={title} className="bg-white rounded-2xl border border-border overflow-hidden">
+          <div key={title} className="bg-white dark:bg-surface rounded-2xl border border-border overflow-hidden">
             <div className="flex items-center gap-3 px-5 py-4 border-b border-border">
               <Icon size={18} className="text-primary" />
               <h2 className="font-semibold text-sm">{title}</h2>
