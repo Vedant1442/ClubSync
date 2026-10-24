@@ -13,7 +13,9 @@ import EmptyState from '../components/EmptyState'
 import UPIPaymentModal from '../components/UPIPaymentModal'
 import PaymentReceiptModal from '../components/PaymentReceiptModal'
 import ClubRecruitmentTab from '../components/ClubRecruitmentTab'
-import { IndianRupee, QrCode, Receipt as ReceiptIcon, Sparkles, ShieldCheck } from 'lucide-react'
+import ClubAnalyticsTab from '../components/ClubAnalyticsTab'
+import ClubInventoryTab from '../components/ClubInventoryTab'
+import { IndianRupee, QrCode, Receipt as ReceiptIcon, Sparkles, ShieldCheck, BarChart3, Package } from 'lucide-react'
 
 // Generate a deterministic color from a string
 const getClubColor = (name = '') => {
@@ -341,6 +343,7 @@ export default function ClubDetail() {
       <div className="flex gap-1 overflow-x-auto pb-2 mb-6 border-b border-border scrollbar-hide">
         {[
           { id: 'overview', label: 'Overview', icon: Users },
+          { id: 'analytics', label: 'Executive Analytics', icon: BarChart3 },
           { id: 'recruitment', label: 'Recruitment & Auditions', icon: Briefcase },
           { id: 'constitution', label: 'Constitution', icon: BookOpen },
           { id: 'meetings', label: 'Meetings & Minutes', icon: Calendar },
@@ -348,6 +351,7 @@ export default function ClubDetail() {
           { id: 'documents', label: 'Documents', icon: FileText },
           { id: 'tasks', label: 'Tasks (Kanban)', icon: CheckSquare },
           { id: 'treasury', label: 'Treasury', icon: DollarSign },
+          { id: 'inventory', label: 'Lab & Equipment', icon: Package },
           { id: 'chat', label: 'Group Chat', icon: MessageCircle },
           { id: 'assistant', label: 'Knowledge AI', icon: MessageSquare },
           { id: 'settings', label: 'Settings', icon: Shield },
@@ -472,6 +476,11 @@ export default function ClubDetail() {
               </div>
             </div>
           </div>
+        )}
+
+        {/* EXECUTIVE ANALYTICS TAB */}
+        {activeTab === 'analytics' && (
+          <ClubAnalyticsTab club={club} isOfficer={isOfficer} />
         )}
 
         {/* RECRUITMENT TAB */}
@@ -1230,6 +1239,11 @@ export default function ClubDetail() {
               )}
             </div>
           </div>
+        )}
+
+        {/* LAB INVENTORY & EQUIPMENT TAB */}
+        {activeTab === 'inventory' && (
+          <ClubInventoryTab club={club} isOfficer={isOfficer} currentUser={currentUser} />
         )}
 
         {/* TREASURY TAB */}
