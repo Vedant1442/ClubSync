@@ -179,6 +179,158 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+// GET club executive analytics & demographics hub
+router.get('/:id/analytics', async (req, res) => {
+  try {
+    const { id: clubId } = req.params;
+
+    // 1. Fetch club info
+    const clubRes = await db.query('SELECT * FROM clubs WHERE id = $1', [clubId]);
+    if (clubRes.rows.length === 0) return res.status(404).json({ error: 'Club not found' });
+    const club = clubRes.rows[0];
+
+    // 2. Events & Registrations Performance
+    const eventsRes = await db.query(`
+      SELECT 
+        e.id, 
+        e.title, 
+        e.date, 
+        e.time, 
+        e.location, 
+        e.price, 
+        e.max_attendees, 
+        e.activity_points,
+        COUNT(DISTINCT em.id) as registrations_count,
+        COUNT(DISTINCT CASE WHEN em.checked_in = true THEN em.id END) as checkins_count,
+        COALESCE(SUM(DISTINCT CASE WHEN p.status = 'completed' THEN p.amount ELSE 0 END), 0) as revenue_collected
+      FROM events e
+      LEFT JOIN event_members em ON em.event_id = e.id
+      LEFT JOIN payments p ON p.event_id = e.id AND p.status = 'completed'
+      WHERE e.club_id = $1
+      GROUP BY e.id, e.title, e.date, e.time, e.location, e.price, e.max_attendees, e.activity_points
+      ORDER BY e.date DESC
+    `, [clubId]);
+
+    const events = eventsRes.rows.map(e => {
+      const reg = parseInt(e.registrations_count) || 0;
+      const chk = parseInt(e.checkins_count) || 0;
+      const rate = reg > 0 ? Math.round((chk / reg) * 100) : 0;
+      return {
+        ...e,
+        registrationsCount: reg,
+        checkinsCount: chk,
+        turnoutRate: rate,
+        revenue: parseFloat(e.revenue_collected) || 0
+      };
+    });
+
+    // 3. Attendees Demographics (Branch & Year of study)
+    const attendeesRes = await db.query(`
+      SELECT 
+        u.id, 
+        u.full_name, 
+        u.email, 
+        u.college_id, 
+        u.branch,
+        em.checked_in,
+        em.checked_in_at,
+        em.ticket_code,
+        e.title as event_title,
+        p.amount as paid_amount,
+        p.utr as payment_utr
+      FROM event_members em
+      JOIN events e ON em.event_id = e.id
+      JOIN users u ON em.user_id = u.id
+      LEFT JOIN payments p ON p.event_id = e.id AND p.user_id = u.id
+      WHERE e.club_id = $1
+      ORDER BY em.checked_in_at DESC NULLS LAST
+    `, [clubId]);
+
+    const allAttendees = attendeesRes.rows;
+
+    // Compute Branch distribution
+    const branchCounts = {};
+    const yearCounts = { 'First Year (FE)': 0, 'Second Year (SE)': 0, 'Third Year (TE)': 0, 'Final Year (BE)': 0 };
+
+    allAttendees.forEach(a => {
+      let b = a.branch || 'BE - Computer Engineering';
+      let cleanBranch = 'Computer Engineering';
+      if (b.includes('Computer')) cleanBranch = 'Computer Engineering';
+      else if (b.includes('Information Technology') || b.includes('IT')) cleanBranch = 'Information Technology';
+      else if (b.includes('Telecommunication') || b.includes('EnTC')) cleanBranch = 'EnTC Engineering';
+      else if (b.includes('Artificial Intelligence') || b.includes('AI')) cleanBranch = 'AI & Data Science';
+      else if (b.includes('First Year') || b.includes('FE')) cleanBranch = 'First Year Engineering';
+      else cleanBranch = b;
+
+      branchCounts[cleanBranch] = (branchCounts[cleanBranch] || 0) + 1;
+
+      const prn = (a.college_id || '').toUpperCase();
+      if (b.includes('FE') || prn.includes('25')) yearCounts['First Year (FE)']++;
+      else if (b.includes('SE') || prn.includes('24')) yearCounts['Second Year (SE)']++;
+      else if (b.includes('TE') || prn.includes('23')) yearCounts['Third Year (TE)']++;
+      else if (b.includes('BE') || prn.includes('22')) yearCounts['Final Year (BE)']++;
+      else yearCounts['Third Year (TE)']++;
+    });
+
+    // 4. Financials / Treasury
+    const treasuryRes = await db.query(`
+      SELECT 
+        type, 
+        COALESCE(SUM(amount), 0) as total 
+      FROM club_transactions 
+      WHERE club_id = $1 
+      GROUP BY type
+    `, [clubId]);
+
+    const treasurySummary = { income: 0, expense: 0, dues: 0 };
+    treasuryRes.rows.forEach(t => {
+      treasurySummary[t.type] = parseFloat(t.total) || 0;
+    });
+
+    // 5. Total Summaries
+    const totalRegistrations = events.reduce((acc, e) => acc + e.registrationsCount, 0);
+    const totalCheckins = events.reduce((acc, e) => acc + e.checkinsCount, 0);
+    const totalRevenue = events.reduce((acc, e) => acc + e.revenue, 0);
+    const totalAICTEPoints = events.reduce((acc, e) => acc + (e.checkinsCount * (parseInt(e.activity_points) || 0)), 0);
+    const overallTurnoutRate = totalRegistrations > 0 ? Math.round((totalCheckins / totalRegistrations) * 100) : 0;
+
+    res.json({
+      club: {
+        id: club.id,
+        name: club.name,
+        category: club.category,
+        membersCount: club.members_count
+      },
+      summary: {
+        totalEvents: events.length,
+        totalRegistrations,
+        totalCheckins,
+        overallTurnoutRate,
+        totalRevenue,
+        totalAICTEPoints,
+        activeMembers: club.members_count
+      },
+      branchDistribution: Object.entries(branchCounts).map(([branch, count]) => ({
+        branch,
+        count,
+        percentage: totalRegistrations > 0 ? Math.round((count / totalRegistrations) * 100) : 0
+      })),
+      yearDistribution: Object.entries(yearCounts).map(([year, count]) => ({
+        year,
+        count,
+        percentage: totalRegistrations > 0 ? Math.round((count / totalRegistrations) * 100) : 0
+      })),
+      events,
+      treasurySummary,
+      attendees: allAttendees,
+      generatedAt: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('[Club Analytics Error]:', error);
+    res.status(500).json({ error: 'Failed to generate club analytics' });
+  }
+});
+
 // POST new club (Protected route)
 router.post('/', requireAuth, async (req, res) => {
   const client = await db.pool.connect();
