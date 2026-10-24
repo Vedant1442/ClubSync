@@ -15,7 +15,8 @@ export default function CreateEventModal({ isOpen, onClose, preselectedClubId = 
     time: '',
     location: '',
     category: 'Social',
-    max_attendees: 100
+    max_attendees: 100,
+    price: 0
   })
 
   // Get clubs where user is an officer
@@ -151,18 +152,32 @@ export default function CreateEventModal({ isOpen, onClose, preselectedClubId = 
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-semibold mb-1.5 text-text-secondary">Category</label>
-            <select
-              value={formData.category}
-              onChange={e => setFormData({...formData, category: e.target.value})}
-              className="w-full bg-surface border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary transition-all"
-            >
-              <option>Social</option>
-              <option>Academic</option>
-              <option>Professional</option>
-              <option>Meeting</option>
-            </select>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-semibold mb-1.5 text-text-secondary">Category</label>
+              <select
+                value={formData.category}
+                onChange={e => setFormData({...formData, category: e.target.value})}
+                className="w-full bg-surface border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary transition-all text-text"
+              >
+                <option>Social</option>
+                <option>Academic</option>
+                <option>Professional</option>
+                <option>Meeting</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-semibold mb-1.5 text-text-secondary">Entry Fee (₹, 0 = Free)</label>
+              <input
+                type="number"
+                min="0"
+                step="10"
+                value={formData.price}
+                onChange={e => setFormData({...formData, price: Number(e.target.value)})}
+                className="w-full bg-surface border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary transition-all text-text"
+                placeholder="0"
+              />
+            </div>
           </div>
 
           <div className="pt-4">
