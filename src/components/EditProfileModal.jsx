@@ -6,7 +6,9 @@ import { useClubSync } from '../context/ClubSyncContext'
 export default function EditProfileModal({ onClose }) {
   const { currentUser, updateProfile } = useClubSync()
   const [formData, setFormData] = useState({
-    full_name: currentUser?.name || '',
+    full_name: currentUser?.name || currentUser?.full_name || '',
+    college_id: currentUser?.college_id || '',
+    branch: currentUser?.branch || '',
     bio: currentUser?.bio || '',
     avatar_url: currentUser?.avatar_url || ''
   })
@@ -43,16 +45,39 @@ export default function EditProfileModal({ onClose }) {
               type="text"
               value={formData.full_name}
               onChange={e => setFormData({ ...formData, full_name: e.target.value })}
-              className="w-full px-3 py-2 bg-white border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+              className="w-full px-3 py-2 bg-white dark:bg-surface-dim text-text border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
               placeholder="Your name"
             />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium mb-1">Roll No / PRN</label>
+              <input
+                type="text"
+                value={formData.college_id}
+                onChange={e => setFormData({ ...formData, college_id: e.target.value })}
+                className="w-full px-3 py-2 bg-white dark:bg-surface-dim text-text border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-mono text-sm"
+                placeholder="e.g. C2K221142"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Branch / Year</label>
+              <input
+                type="text"
+                value={formData.branch}
+                onChange={e => setFormData({ ...formData, branch: e.target.value })}
+                className="w-full px-3 py-2 bg-white dark:bg-surface-dim text-text border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm"
+                placeholder="e.g. BE - Comp Engg"
+              />
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">Bio</label>
             <textarea
               value={formData.bio}
               onChange={e => setFormData({ ...formData, bio: e.target.value })}
-              className="w-full px-3 py-2 bg-white border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none h-24"
+              className="w-full px-3 py-2 bg-white dark:bg-surface-dim text-text border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none h-24"
               placeholder="Tell us a bit about yourself..."
             />
           </div>
@@ -62,7 +87,7 @@ export default function EditProfileModal({ onClose }) {
               type="url"
               value={formData.avatar_url}
               onChange={e => setFormData({ ...formData, avatar_url: e.target.value })}
-              className="w-full px-3 py-2 bg-white border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+              className="w-full px-3 py-2 bg-white dark:bg-surface-dim text-text border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
               placeholder="https://example.com/avatar.jpg"
             />
             {formData.avatar_url && (

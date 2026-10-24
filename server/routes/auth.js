@@ -105,7 +105,7 @@ router.post('/login', async (req, res) => {
 router.get('/me', requireAuth, async (req, res) => {
   try {
     const result = await db.query(
-      'SELECT id, email, full_name, bio, avatar_url, created_at FROM users WHERE id = $1', 
+      'SELECT id, email, full_name, bio, avatar_url, college_id, branch, created_at FROM users WHERE id = $1', 
       [req.user.id]
     );
     
@@ -156,7 +156,7 @@ router.get(
 // Update Profile
 router.put('/profile', requireAuth, async (req, res) => {
   try {
-    let { full_name, bio, avatar_url } = req.body;
+    let { full_name, bio, avatar_url, college_id, branch } = req.body;
     
     if (full_name !== undefined) {
       full_name = String(full_name).trim();
@@ -178,15 +178,25 @@ router.put('/profile', requireAuth, async (req, res) => {
         return res.status(400).json({ error: 'Avatar URL is too long' });
       }
     }
+
+    if (college_id !== undefined && college_id !== null) {
+      college_id = String(college_id).trim();
+    }
+
+    if (branch !== undefined && branch !== null) {
+      branch = String(branch).trim();
+    }
     
     const result = await db.query(
       `UPDATE users 
        SET full_name = COALESCE($1, full_name), 
            bio = COALESCE($2, bio), 
-           avatar_url = COALESCE($3, avatar_url) 
-       WHERE id = $4 
-       RETURNING id, email, full_name, bio, avatar_url`,
-      [full_name || null, bio || null, avatar_url || null, req.user.id]
+           avatar_url = COALESCE($3, avatar_url),
+           college_id = COALESCE($4, college_id),
+           branch = COALESCE($5, branch) 
+       WHERE id = $6 
+       RETURNING id, email, full_name, bio, avatar_url, college_id, branch`,
+      [full_name || null, bio || null, avatar_url || null, college_id || null, branch || null, req.user.id]
     );
     
     res.json({ user: result.rows[0] });
