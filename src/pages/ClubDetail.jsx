@@ -4,11 +4,16 @@ import { toast } from 'sonner'
 import { 
   Users, Clock, MapPin, Calendar, ArrowLeft, UserPlus, Mail, 
   BookOpen, FileText, CheckSquare, MessageSquare, MessageCircle, Shield, HelpCircle,  
-  Upload, FolderPlus, Download, CheckCircle, Play, Plus, Trash2, Edit3, Send, Video, DollarSign, TrendingUp, TrendingDown
+  Upload, FolderPlus, Download, CheckCircle, Play, Plus, Trash2, Edit3, Send, Video, DollarSign, TrendingUp, TrendingDown,
+  Briefcase
 } from 'lucide-react'
 import { useClubSync } from '../context/ClubSyncContext'
 import { SkeletonPage } from '../components/Skeleton'
 import EmptyState from '../components/EmptyState'
+import UPIPaymentModal from '../components/UPIPaymentModal'
+import PaymentReceiptModal from '../components/PaymentReceiptModal'
+import ClubRecruitmentTab from '../components/ClubRecruitmentTab'
+import { IndianRupee, QrCode, Receipt as ReceiptIcon, Sparkles, ShieldCheck } from 'lucide-react'
 
 // Generate a deterministic color from a string
 const getClubColor = (name = '') => {
@@ -24,7 +29,7 @@ export default function ClubDetail() {
   const clubId = id  // UUID string — do NOT convert to Number
   
   const { 
-    clubs, events, constitutions, meetings, elections, 
+    clubs, events, constitutions, meetings, elections, payments, updatePaymentStatus, 
     electionCandidates, electionVotes, documents, tasks, transactions, messages,
     clubMemberships, allClubMembers, isClubOfficer, getUserClubRole, 
     joinClub, leaveClub, updateMemberRole, rsvpEvent, cancelRsvp,
@@ -34,6 +39,8 @@ export default function ClubDetail() {
   } = useClubSync()
 
   const [activeTab, setActiveTab] = useState('overview')
+  const [isDuesPaymentModalOpen, setIsDuesPaymentModalOpen] = useState(false)
+  const [selectedReceiptPayment, setSelectedReceiptPayment] = useState(null)
   const club = clubs.find(c => c.id === clubId)
 
   // Tab states
@@ -232,6 +239,56 @@ export default function ClubDetail() {
     setChatMessages(prev => [...prev, assistantMsg])
   }
 
+  const handleExportFinancialCSV = () => {
+    const clubTx = (transactions || []).filter(t => t.club_id === club.id)
+    const clubPmts = (payments || []).filter(p => p.club_id === club.id)
+    if (clubTx.length === 0 && clubPmts.length === 0) {
+      toast.info('No financial records found to export.')
+      return
+    }
+
+    let csvRows = []
+    csvRows.push(['PICT PUNE - CLUB FINANCIAL AUDIT STATEMENT FY2025-26'])
+    csvRows.push([`Club: ${club.name}`, `Generated on: ${new Date().toLocaleDateString('en-IN')}`, `Official UPI VPA: ${club.upi_vpa || 'vedant1442@fam'}`])
+    csvRows.push([])
+    csvRows.push(['--- TREASURY EXPENSE & INCOME LEDGER ---'])
+    csvRows.push(['Date', 'Type', 'Category', 'Description', 'Amount (INR)'])
+    clubTx.forEach(t => {
+      csvRows.push([
+        `"${new Date(t.date || t.created_at || Date.now()).toLocaleDateString('en-IN')}"`,
+        `"${(t.type || '').toUpperCase()}"`,
+        `"${(t.category || '').replace(/"/g, '""')}"`,
+        `"${(t.description || '').replace(/"/g, '""')}"`,
+        Number(t.amount || 0).toFixed(2)
+      ])
+    })
+
+    csvRows.push([])
+    csvRows.push(['--- ONLINE UPI PAYMENTS & UTR RECONCILIATION ---'])
+    csvRows.push(['Date', 'Payer Name', 'Type', 'Reference ID', '12-Digit UTR', 'Amount (INR)', 'Verification Status'])
+    clubPmts.forEach(p => {
+      csvRows.push([
+        `"${new Date(p.created_at || Date.now()).toLocaleDateString('en-IN')}"`,
+        `"${(p.user_name || 'Member').replace(/"/g, '""')}"`,
+        `"${(p.type || '').replace('_', ' ').toUpperCase()}"`,
+        `"${p.ref_id || ''}"`,
+        `"${p.utr || 'Pending'}"`,
+        Number(p.amount || 0).toFixed(2),
+        `"${(p.status || 'pending').toUpperCase()}"`
+      ])
+    })
+
+    const csvContent = 'data:text/csv;charset=utf-8,' + csvRows.map(r => r.join(',')).join('\n')
+    const encodedUri = encodeURI(csvContent)
+    const link = document.createElement('a')
+    link.setAttribute('href', encodedUri)
+    link.setAttribute('download', `${club.name.replace(/[^a-zA-Z0-9_-]/g, '_')}_Financial_Audit_FY26.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    toast.success('Financial audit statement downloaded!')
+  }
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 pb-24 md:pb-8">
       {/* Back Button */}
@@ -284,6 +341,7 @@ export default function ClubDetail() {
       <div className="flex gap-1 overflow-x-auto pb-2 mb-6 border-b border-border scrollbar-hide">
         {[
           { id: 'overview', label: 'Overview', icon: Users },
+          { id: 'recruitment', label: 'Recruitment & Auditions', icon: Briefcase },
           { id: 'constitution', label: 'Constitution', icon: BookOpen },
           { id: 'meetings', label: 'Meetings & Minutes', icon: Calendar },
           { id: 'elections', label: 'Elections', icon: CheckCircle },
@@ -416,6 +474,15 @@ export default function ClubDetail() {
           </div>
         )}
 
+        {/* RECRUITMENT TAB */}
+        {activeTab === 'recruitment' && (
+          <ClubRecruitmentTab
+            club={club}
+            isOfficer={isOfficer}
+            currentUser={currentUser}
+          />
+        )}
+
         {/* CONSTITUTION TAB */}
         {activeTab === 'constitution' && (
           <div className="grid lg:grid-cols-3 gap-6">
@@ -454,7 +521,7 @@ export default function ClubDetail() {
                       <select 
                         value={compareVersion1} 
                         onChange={e => setCompareVersion1(e.target.value)}
-                        className="w-full text-xs p-2 rounded-xl border border-border bg-white focus:outline-none"
+                        className="w-full text-xs p-2 rounded-xl border border-border bg-white dark:bg-surface text-text focus:outline-none"
                       >
                         <option value="">Select version</option>
                         {clubConstitutions.map(c => (
@@ -467,7 +534,7 @@ export default function ClubDetail() {
                       <select 
                         value={compareVersion2} 
                         onChange={e => setCompareVersion2(e.target.value)}
-                        className="w-full text-xs p-2 rounded-xl border border-border bg-white focus:outline-none"
+                        className="w-full text-xs p-2 rounded-xl border border-border bg-white dark:bg-surface text-text focus:outline-none"
                       >
                         <option value="">Select version</option>
                         {clubConstitutions.map(c => (
@@ -505,7 +572,7 @@ export default function ClubDetail() {
                         value={constVersion}
                         onChange={e => setConstVersion(e.target.value)}
                         placeholder="1.1"
-                        className="w-full text-xs p-2.5 rounded-xl border border-border bg-white focus:ring-1 focus:ring-primary focus:outline-none"
+                        className="w-full text-xs p-2.5 rounded-xl border border-border bg-white dark:bg-surface text-text focus:ring-1 focus:ring-primary focus:outline-none"
                         required
                       />
                     </div>
@@ -516,7 +583,7 @@ export default function ClubDetail() {
                         value={constTitle}
                         onChange={e => setConstTitle(e.target.value)}
                         placeholder="Amended Article II"
-                        className="w-full text-xs p-2.5 rounded-xl border border-border bg-white focus:ring-1 focus:ring-primary focus:outline-none"
+                        className="w-full text-xs p-2.5 rounded-xl border border-border bg-white dark:bg-surface text-text focus:ring-1 focus:ring-primary focus:outline-none"
                         required
                       />
                     </div>
@@ -527,7 +594,7 @@ export default function ClubDetail() {
                         value={constContent}
                         onChange={e => setConstContent(e.target.value)}
                         placeholder="Add amendment text here..."
-                        className="w-full text-xs p-2.5 rounded-xl border border-border bg-white focus:ring-1 focus:ring-primary focus:outline-none"
+                        className="w-full text-xs p-2.5 rounded-xl border border-border bg-white dark:bg-surface text-text focus:ring-1 focus:ring-primary focus:outline-none"
                         required
                       />
                     </div>
@@ -672,7 +739,7 @@ export default function ClubDetail() {
                       value={meetMinutes}
                       onChange={e => setMeetMinutes(e.target.value)}
                       placeholder="Write main discussions, decisions made, and follow-ups here..."
-                      className="w-full text-xs p-3 rounded-xl border border-border bg-white focus:outline-none"
+                      className="w-full text-xs p-3 rounded-xl border border-border bg-white dark:bg-surface text-text focus:outline-none"
                       required
                     />
                     <div className="flex gap-2 justify-end">
@@ -708,7 +775,7 @@ export default function ClubDetail() {
                         value={meetTitle}
                         onChange={e => setMeetTitle(e.target.value)}
                         placeholder="Weekly Sync"
-                        className="w-full text-xs p-2.5 rounded-xl border border-border bg-white focus:outline-none"
+                        className="w-full text-xs p-2.5 rounded-xl border border-border bg-white dark:bg-surface text-text focus:outline-none"
                         required
                       />
                     </div>
@@ -719,7 +786,7 @@ export default function ClubDetail() {
                           type="date" 
                           value={meetDate}
                           onChange={e => setMeetDate(e.target.value)}
-                          className="w-full text-xs p-2.5 rounded-xl border border-border bg-white focus:outline-none"
+                          className="w-full text-xs p-2.5 rounded-xl border border-border bg-white dark:bg-surface text-text focus:outline-none"
                           required
                         />
                       </div>
@@ -730,7 +797,7 @@ export default function ClubDetail() {
                           value={meetTime}
                           onChange={e => setMeetTime(e.target.value)}
                           placeholder="4:00 PM"
-                          className="w-full text-xs p-2.5 rounded-xl border border-border bg-white focus:outline-none"
+                          className="w-full text-xs p-2.5 rounded-xl border border-border bg-white dark:bg-surface text-text focus:outline-none"
                           required
                         />
                       </div>
@@ -742,7 +809,7 @@ export default function ClubDetail() {
                         value={meetLoc}
                         onChange={e => setMeetLoc(e.target.value)}
                         placeholder="Room 201"
-                        className="w-full text-xs p-2.5 rounded-xl border border-border bg-white focus:outline-none"
+                        className="w-full text-xs p-2.5 rounded-xl border border-border bg-white dark:bg-surface text-text focus:outline-none"
                         required
                       />
                     </div>
@@ -753,7 +820,7 @@ export default function ClubDetail() {
                         value={meetDesc}
                         onChange={e => setMeetDesc(e.target.value)}
                         placeholder="Agenda details..."
-                        className="w-full text-xs p-2.5 rounded-xl border border-border bg-white focus:outline-none"
+                        className="w-full text-xs p-2.5 rounded-xl border border-border bg-white dark:bg-surface text-text focus:outline-none"
                       />
                     </div>
                     <button 
@@ -798,7 +865,7 @@ export default function ClubDetail() {
                           const totalVotes = electionCandidates.filter(c => c.election_id === activeElection.id).reduce((sum, c) => sum + c.votes_count, 0)
                           const percentage = totalVotes === 0 ? 0 : Math.round((cand.votes_count / totalVotes) * 100)
                           return (
-                            <div key={cand.id} className="border border-border p-4 rounded-xl flex justify-between items-center bg-surface-dim hover:bg-white transition-colors">
+                            <div key={cand.id} className="border border-border p-4 rounded-xl flex justify-between items-center bg-surface-dim hover:bg-surface-muted transition-colors">
                               <div className="flex-1 mr-4">
                                 <div className="flex justify-between items-center mb-1 text-xs font-semibold">
                                   <span>{cand.name}</span>
@@ -870,7 +937,7 @@ export default function ClubDetail() {
                         value={electTitle}
                         onChange={e => setElectTitle(e.target.value)}
                         placeholder="2026 President Elections"
-                        className="w-full text-xs p-2.5 rounded-xl border border-border bg-white focus:outline-none"
+                        className="w-full text-xs p-2.5 rounded-xl border border-border bg-white dark:bg-surface text-text focus:outline-none"
                         required
                       />
                     </div>
@@ -881,7 +948,7 @@ export default function ClubDetail() {
                         value={electRole}
                         onChange={e => setElectRole(e.target.value)}
                         placeholder="President"
-                        className="w-full text-xs p-2.5 rounded-xl border border-border bg-white focus:outline-none"
+                        className="w-full text-xs p-2.5 rounded-xl border border-border bg-white dark:bg-surface text-text focus:outline-none"
                         required
                       />
                     </div>
@@ -892,7 +959,7 @@ export default function ClubDetail() {
                         value={candidatesText}
                         onChange={e => setCandidatesText(e.target.value)}
                         placeholder="Sarah Miller, David Chen, Alex Johnson"
-                        className="w-full text-xs p-2.5 rounded-xl border border-border bg-white focus:outline-none"
+                        className="w-full text-xs p-2.5 rounded-xl border border-border bg-white dark:bg-surface text-text focus:outline-none"
                         required
                       />
                     </div>
@@ -925,7 +992,7 @@ export default function ClubDetail() {
                     key={f}
                     onClick={() => setDocFolder(f)}
                     className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-colors ${
-                      docFolder === f ? 'bg-primary text-white' : 'bg-white border border-border text-text-secondary hover:bg-surface-muted'
+                      docFolder === f ? 'bg-primary text-white' : 'bg-white dark:bg-surface border border-border text-text-secondary hover:bg-surface-muted'
                     }`}
                   >
                     📁 {f === '/' ? 'Root' : f.replace('/', '')}
@@ -958,7 +1025,7 @@ export default function ClubDetail() {
                             href={doc.file_url} 
                             target="_blank" 
                             rel="noreferrer"
-                            className="p-1.5 rounded-lg border border-border hover:bg-white text-primary"
+                            className="p-1.5 rounded-lg border border-border hover:bg-surface-muted text-primary"
                           >
                             <Download size={12} />
                           </a>
@@ -985,7 +1052,7 @@ export default function ClubDetail() {
                     value={newFolderName}
                     onChange={e => setNewFolderName(e.target.value)}
                     placeholder="NewFolder"
-                    className="flex-1 text-xs p-2 rounded-xl border border-border bg-white focus:outline-none"
+                    className="flex-1 text-xs p-2 rounded-xl border border-border bg-white dark:bg-surface text-text focus:outline-none"
                     required
                   />
                   <button 
@@ -1007,7 +1074,7 @@ export default function ClubDetail() {
                       <input 
                         type="file" 
                         onChange={e => setDocFile(e.target.files[0])}
-                        className="w-full text-xs p-2 rounded-xl border border-border bg-white focus:outline-none"
+                        className="w-full text-xs p-2 rounded-xl border border-border bg-white dark:bg-surface text-text focus:outline-none"
                         required
                       />
                     </div>
@@ -1016,7 +1083,7 @@ export default function ClubDetail() {
                       <select 
                         value={docFolder}
                         onChange={e => setDocFolder(e.target.value)}
-                        className="w-full text-xs p-2.5 rounded-xl border border-border bg-white focus:outline-none"
+                        className="w-full text-xs p-2.5 rounded-xl border border-border bg-white dark:bg-surface text-text focus:outline-none"
                       >
                         {folders.map(f => (
                           <option key={f} value={f}>{f}</option>
@@ -1112,7 +1179,7 @@ export default function ClubDetail() {
                         value={taskTitle}
                         onChange={e => setTaskTitle(e.target.value)}
                         placeholder="Setup sound system"
-                        className="w-full text-xs p-2.5 rounded-xl border border-border bg-white focus:outline-none"
+                        className="w-full text-xs p-2.5 rounded-xl border border-border bg-white dark:bg-surface text-text focus:outline-none"
                         required
                       />
                     </div>
@@ -1123,7 +1190,7 @@ export default function ClubDetail() {
                         value={taskDesc}
                         onChange={e => setTaskDesc(e.target.value)}
                         placeholder="Details..."
-                        className="w-full text-xs p-2.5 rounded-xl border border-border bg-white focus:outline-none"
+                        className="w-full text-xs p-2.5 rounded-xl border border-border bg-white dark:bg-surface text-text focus:outline-none"
                       />
                     </div>
                     <div>
@@ -1131,7 +1198,7 @@ export default function ClubDetail() {
                       <select 
                         value={taskAssigneeId}
                         onChange={e => setTaskAssigneeId(e.target.value)}
-                        className="w-full text-xs p-2.5 rounded-xl border border-border bg-white focus:outline-none"
+                        className="w-full text-xs p-2.5 rounded-xl border border-border bg-white dark:bg-surface text-text focus:outline-none"
                       >
                         {clubRealMembers.map(m => (
                           <option key={m.user_id} value={m.user_id}>{m.full_name}</option>
@@ -1144,7 +1211,7 @@ export default function ClubDetail() {
                         type="date" 
                         value={taskDueDate}
                         onChange={e => setTaskDueDate(e.target.value)}
-                        className="w-full text-xs p-2.5 rounded-xl border border-border bg-white focus:outline-none"
+                        className="w-full text-xs p-2.5 rounded-xl border border-border bg-white dark:bg-surface text-text focus:outline-none"
                       />
                     </div>
                     <button 
@@ -1168,88 +1235,254 @@ export default function ClubDetail() {
         {/* TREASURY TAB */}
         {activeTab === 'treasury' && (
           <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row gap-4 justify-between items-start">
+            <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
               <div>
-                <h2 className="font-semibold text-lg">Club Treasury</h2>
-                <p className="text-xs text-text-secondary">Track budget, collect dues, and log expenses.</p>
+                <div className="flex items-center gap-2">
+                  <h2 className="font-bold text-lg text-text">Club Treasury & Finance</h2>
+                  <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 flex items-center gap-1">
+                    <Sparkles size={12} /> YouPI Zero-Fee UPI
+                  </span>
+                </div>
+                <p className="text-xs text-text-secondary mt-0.5">Track collegiate budget, verify UPI UTR transactions, and collect dues.</p>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={handleExportFinancialCSV}
+                  className="px-3.5 py-2.5 rounded-xl border border-border bg-surface-dim hover:bg-surface-muted text-text font-semibold text-xs flex items-center gap-1.5 shadow-sm transition-all"
+                  title="Export Annual Statement for College Audit"
+                >
+                  <Download size={14} className="text-emerald-600" />
+                  <span>Export Financial Audit (CSV)</span>
+                </button>
+                <button
+                  onClick={() => setIsDuesPaymentModalOpen(true)}
+                  className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs flex items-center gap-1.5 shadow-sm transition-all hover:scale-[1.02]"
+                >
+                  <IndianRupee size={15} />
+                  <span>Pay Member Dues (UPI)</span>
+                </button>
               </div>
             </div>
 
             <div className="grid lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2 space-y-4">
-                <div className="bg-white dark:bg-surface rounded-2xl border border-border p-5">
-                  <h3 className="font-semibold text-sm mb-4">Transaction History</h3>
+              <div className="lg:col-span-2 space-y-6">
+                {/* Balance Card & UPI Details */}
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div className="bg-gradient-to-br from-indigo-600 via-primary to-blue-700 text-white rounded-2xl p-6 shadow-md flex flex-col justify-between">
+                    <div>
+                      <div className="text-xs font-medium text-white/80 mb-1 uppercase tracking-wider">Total Available Balance</div>
+                      <div className="text-3xl font-black tracking-tight">
+                        ₹{(transactions.filter(t => t.club_id === club.id).reduce((sum, tx) => sum + (tx.type === 'income' || tx.type === 'dues' ? Number(tx.amount) : -Number(tx.amount)), 0)).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </div>
+                    </div>
+                    <div className="mt-4 pt-3 border-t border-white/20 flex items-center justify-between text-xs text-white/90">
+                      <span>Annual Budget FY26</span>
+                      <span className="font-semibold text-emerald-300">Healthy Surplus</span>
+                    </div>
+                  </div>
+
+                  <div className="bg-white dark:bg-surface border border-border rounded-2xl p-5 shadow-sm flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <QrCode size={18} className="text-emerald-600" />
+                        <span className="text-xs font-bold text-text uppercase">Official Receiving UPI VPA</span>
+                      </div>
+                      <div className="p-3 bg-surface-dim rounded-xl border border-border">
+                        <span className="text-xs text-text-secondary block">Direct Account VPA:</span>
+                        <span className="font-mono font-bold text-sm text-text select-all">{club.upi_vpa || 'vedant1442@fam'}</span>
+                      </div>
+                    </div>
+                    <div className="mt-3 text-[11px] text-text-secondary flex items-center gap-1">
+                      <ShieldCheck size={14} className="text-emerald-600" />
+                      <span>Zero aggregator cuts. Direct settlement to club bank.</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* UPI Online Payments & UTR Audit Log */}
+                <div className="bg-white dark:bg-surface rounded-2xl border border-border p-5 shadow-sm">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h3 className="font-semibold text-sm text-text">UPI Payments & UTR Reconciliation</h3>
+                      <p className="text-[11px] text-text-secondary">Recent digital UPI payments via YouPI Gateway</p>
+                    </div>
+                    <span className="text-xs text-primary font-medium">
+                      {(payments || []).filter(p => p.club_id === club.id).length} recorded
+                    </span>
+                  </div>
+
+                  {(payments || []).filter(p => p.club_id === club.id).length > 0 ? (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-xs">
+                        <thead>
+                          <tr className="border-b border-border text-text-secondary text-[11px]">
+                            <th className="pb-2 font-medium">Payer / Ref</th>
+                            <th className="pb-2 font-medium">Type</th>
+                            <th className="pb-2 font-medium">12-Digit UTR</th>
+                            <th className="pb-2 font-medium">Amount</th>
+                            <th className="pb-2 font-medium">Status</th>
+                            {isOfficer && <th className="pb-2 font-medium text-right">Action</th>}
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-border">
+                          {(payments || []).filter(p => p.club_id === club.id).map(p => (
+                            <tr key={p.id} className="hover:bg-surface-dim transition-colors">
+                              <td className="py-2.5">
+                                <div className="font-semibold text-text">{p.user_name || 'Student Member'}</div>
+                                <div className="text-[10px] text-text-secondary font-mono">{p.ref_id}</div>
+                              </td>
+                              <td className="py-2.5">
+                                <span className="capitalize px-2 py-0.5 rounded-full text-[10px] bg-surface-muted text-text-secondary">
+                                  {p.type ? p.type.replace('_', ' ') : 'Payment'}
+                                </span>
+                              </td>
+                              <td className="py-2.5 font-mono text-[11px] text-primary font-bold">
+                                {p.utr || <span className="text-text-secondary italic">Pending</span>}
+                              </td>
+                              <td className="py-2.5 font-bold text-text">
+                                ₹{Number(p.amount).toFixed(2)}
+                              </td>
+                              <td className="py-2.5">
+                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                                  p.status === 'verified'
+                                    ? 'bg-emerald-500/10 text-emerald-600'
+                                    : p.status === 'rejected'
+                                    ? 'bg-red-500/10 text-red-600'
+                                    : 'bg-amber-500/10 text-amber-600 animate-pulse'
+                                }`}>
+                                  {p.status}
+                                </span>
+                              </td>
+                              {isOfficer && (
+                                <td className="py-2.5 text-right">
+                                  {p.status === 'pending' && (
+                                    <div className="flex gap-1 justify-end">
+                                      <button
+                                        onClick={async () => {
+                                          try {
+                                            await updatePaymentStatus(p.id, 'verified');
+                                            toast.success('Payment verified & credited!');
+                                          } catch(err) {
+                                            toast.error(err.message);
+                                          }
+                                        }}
+                                        className="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[10px] font-semibold"
+                                      >
+                                        Verify
+                                      </button>
+                                    </div>
+                                  )}
+                                  {p.status === 'verified' && (
+                                    <button
+                                      onClick={() => setSelectedReceiptPayment(p)}
+                                      className="px-2 py-1 bg-surface-muted hover:bg-surface-dim border border-border text-emerald-600 rounded text-[10px] font-semibold flex items-center gap-1 ml-auto"
+                                    >
+                                      <ReceiptIcon size={12} />
+                                      <span>Receipt</span>
+                                    </button>
+                                  )}
+                                </td>
+                              )}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="text-center py-6 text-text-secondary text-xs">
+                      No UPI digital transactions yet. Members can pay dues via the button above.
+                    </div>
+                  )}
+                </div>
+
+                {/* Full Ledger Transaction History */}
+                <div className="bg-white dark:bg-surface rounded-2xl border border-border p-5 shadow-sm">
+                  <h3 className="font-semibold text-sm mb-4 text-text">Collegiate Ledger History</h3>
                   {transactions.filter(t => t.club_id === club.id).length > 0 ? (
                     <div className="space-y-2">
                       {transactions.filter(t => t.club_id === club.id).sort((a,b) => new Date(b.created_at) - new Date(a.created_at)).map(tx => {
                         const isIncome = tx.type === 'income' || tx.type === 'dues';
                         return (
-                          <div key={tx.id} className="flex items-center justify-between p-3 border border-border rounded-xl">
+                          <div key={tx.id} className="flex items-center justify-between p-3 border border-border rounded-xl hover:bg-surface-dim transition-colors">
                             <div className="flex items-center gap-3">
-                              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${isIncome ? 'bg-green-500/10 text-green-600' : 'bg-red-500/10 text-red-600'}`}>
+                              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${isIncome ? 'bg-emerald-500/10 text-emerald-600' : 'bg-rose-500/10 text-rose-600'}`}>
                                 {isIncome ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
                               </div>
                               <div>
-                                <div className="text-sm font-semibold">{tx.description}</div>
-                                <div className="text-[10px] text-text-secondary">{new Date(tx.created_at).toLocaleDateString()}</div>
+                                <div className="text-sm font-semibold text-text">{tx.description}</div>
+                                <div className="text-[10px] text-text-secondary">{new Date(tx.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</div>
                               </div>
                             </div>
-                            <div className={`text-sm font-bold ${isIncome ? 'text-green-600' : 'text-red-600'}`}>
-                              {isIncome ? '+' : '-'}{(Number(tx.amount)).toFixed(2)}
+                            <div className={`text-sm font-bold ${isIncome ? 'text-emerald-600' : 'text-rose-600'}`}>
+                              {isIncome ? '+₹' : '-₹'}{(Number(tx.amount)).toFixed(2)}
                             </div>
                           </div>
                         )
                       })}
                     </div>
                   ) : (
-                    <p className="text-xs text-text-secondary text-center py-8">No transactions logged yet.</p>
+                    <p className="text-xs text-text-secondary text-center py-8">No ledger entries logged yet.</p>
                   )}
                 </div>
               </div>
 
               <div className="space-y-4">
-                <div className="bg-gradient-to-br from-indigo-600 to-primary text-white rounded-2xl p-6 shadow-md">
-                  <div className="text-sm font-medium text-white/80 mb-1">Total Balance</div>
-                  <div className="text-3xl font-bold">
-                    ${(transactions.filter(t => t.club_id === club.id).reduce((sum, tx) => sum + (tx.type === 'income' || tx.type === 'dues' ? Number(tx.amount) : -Number(tx.amount)), 0)).toFixed(2)}
-                  </div>
-                </div>
-
                 {isOfficer && (
                   <div className="bg-white dark:bg-surface rounded-2xl border border-border p-5 shadow-sm">
-                    <h3 className="font-semibold text-sm mb-4">Log Transaction</h3>
+                    <h3 className="font-semibold text-sm mb-4 text-text">Log Manual Transaction</h3>
                     <form onSubmit={async (e) => {
                       e.preventDefault();
                       const amount = e.target.amount.value;
                       const desc = e.target.desc.value;
                       const type = e.target.type.value;
                       await addTransaction(club.id, { amount, description: desc, type });
+                      toast.success('Transaction saved!');
                       e.target.reset();
                     }} className="space-y-3">
                       <div>
                         <label className="block text-xs font-medium text-text-secondary mb-1">Type</label>
-                        <select name="type" required className="w-full text-xs p-2.5 rounded-xl border border-border bg-white focus:outline-none">
-                          <option value="income">Income</option>
-                          <option value="expense">Expense</option>
+                        <select name="type" required className="w-full text-xs p-2.5 rounded-xl border border-border bg-surface-dim text-text focus:outline-none">
+                          <option value="income">Income / Grant</option>
+                          <option value="expense">Procurement / Expense</option>
                           <option value="dues">Member Dues</option>
                         </select>
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-text-secondary mb-1">Amount ($)</label>
-                        <input name="amount" type="number" step="0.01" required placeholder="0.00" className="w-full text-xs p-2.5 rounded-xl border border-border bg-white focus:outline-none" />
+                        <label className="block text-xs font-medium text-text-secondary mb-1">Amount (₹ INR)</label>
+                        <input name="amount" type="number" step="1" required placeholder="500" className="w-full text-xs p-2.5 rounded-xl border border-border bg-surface-dim text-text focus:outline-none" />
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-text-secondary mb-1">Description</label>
-                        <input name="desc" type="text" required placeholder="e.g. Fall Fest Supplies" className="w-full text-xs p-2.5 rounded-xl border border-border bg-white focus:outline-none" />
+                        <label className="block text-xs font-medium text-text-secondary mb-1">Description / Bill Reference</label>
+                        <input name="desc" type="text" required placeholder="e.g. Laser cutting at Bhosari MIDC" className="w-full text-xs p-2.5 rounded-xl border border-border bg-surface-dim text-text focus:outline-none" />
                       </div>
-                      <button type="submit" className="w-full bg-primary hover:bg-primary-dark text-white py-2.5 rounded-xl text-xs font-bold transition-colors">
-                        Save Transaction
+                      <button type="submit" className="w-full bg-primary hover:bg-primary-dark text-white py-2.5 rounded-xl text-xs font-bold transition-colors shadow-sm">
+                        Record Transaction
                       </button>
                     </form>
                   </div>
                 )}
               </div>
             </div>
+
+            {/* Official E-Receipt Modal */}
+            <PaymentReceiptModal
+              isOpen={!!selectedReceiptPayment}
+              onClose={() => setSelectedReceiptPayment(null)}
+              payment={selectedReceiptPayment}
+              club={club}
+              user={currentUser}
+            />
+
+            {/* Dues UPI Payment Modal */}
+            <UPIPaymentModal
+              isOpen={isDuesPaymentModalOpen}
+              onClose={() => setIsDuesPaymentModalOpen(false)}
+              club={club}
+              type="membership_dues"
+              amount={500}
+              onSuccess={() => setIsDuesPaymentModalOpen(false)}
+            />
           </div>
         )}
 
@@ -1308,7 +1541,7 @@ export default function ClubDetail() {
                   type="text" 
                   name="message"
                   placeholder="Message the club..." 
-                  className="flex-1 px-4 py-2.5 rounded-xl border border-border bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
+                  className="flex-1 px-4 py-2.5 rounded-xl border border-border bg-white dark:bg-surface text-text focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
                 />
                 <button 
                   type="submit"
@@ -1347,7 +1580,7 @@ export default function ClubDetail() {
                 value={chatInput}
                 onChange={e => setChatInput(e.target.value)}
                 placeholder="Ask about the constitution, meeting history, or documents..."
-                className="flex-1 text-xs px-4 py-2.5 rounded-xl border border-border bg-white focus:outline-none focus:ring-1 focus:ring-primary"
+                className="flex-1 text-xs px-4 py-2.5 rounded-xl border border-border bg-white dark:bg-surface text-text focus:outline-none focus:ring-1 focus:ring-primary"
               />
               <button 
                 type="submit"
@@ -1396,7 +1629,7 @@ export default function ClubDetail() {
                                 <select 
                                   value={role}
                                   onChange={e => updateMemberRole(clubId, member.user_id, e.target.value)}
-                                  className="p-1 rounded border border-border text-[10px] bg-white focus:outline-none"
+                                  className="p-1 rounded border border-border text-[10px] bg-white dark:bg-surface text-text focus:outline-none"
                                 >
                                   <option value="Member">Member</option>
                                   <option value="Secretary">Secretary</option>
