@@ -17,6 +17,7 @@ const Profile = lazy(() => import('./pages/Profile'))
 const Notifications = lazy(() => import('./pages/Notifications'))
 const Settings = lazy(() => import('./pages/Settings'))
 const MeetingRoom = lazy(() => import('./pages/MeetingRoom'))
+const VerifyCredential = lazy(() => import('./pages/VerifyCredential'))
 
 import PageTransition from './components/PageTransition'
 
@@ -47,7 +48,8 @@ export default function App() {
       <Suspense fallback={<LoadingFallback />}>
         <Routes>
           <Route path="/" element={<Landing />} />
-        <Route path="/login" element={<Login />} />
+          <Route path="/verify/:id" element={<VerifyCredential />} />
+          <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/dashboard" element={dashboardLayout(Dashboard)} />
         <Route path="/clubs" element={dashboardLayout(Clubs)} />
