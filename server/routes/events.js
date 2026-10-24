@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
-const { requireAuth, requireOfficer } = require('../middleware/auth');
+const { requireAuth, requireOfficer, JWT_SECRET, OFFICER_ROLES } = require('../middleware/auth');
 
 // Create a new event
 router.post('/', requireAuth, requireOfficer('club_id'), async (req, res) => {
@@ -192,6 +192,23 @@ router.post('/:id/check-in', requireAuth, async (req, res) => {
 router.get('/:id/attendees', requireAuth, async (req, res) => {
   try {
     const eventId = req.params.id;
+
+    // Verify event exists and obtain club_id
+    const evRes = await db.query('SELECT club_id FROM events WHERE id = $1', [eventId]);
+    if (evRes.rows.length === 0) return res.status(404).json({ error: 'Event not found' });
+    const clubId = evRes.rows[0].club_id;
+
+    // Authorize: requester must be a club officer
+    const officerCheck = await db.query(
+      'SELECT role FROM club_members WHERE club_id = $1 AND user_id = $2',
+      [clubId, req.user.id]
+    );
+    const isOfficer = officerCheck.rows.length > 0 &&
+      (OFFICER_ROLES || ['President', 'Vice President', 'Secretary', 'Treasurer', 'officer', 'Officer']).includes(officerCheck.rows[0].role);
+
+    if (!isOfficer) {
+      return res.status(403).json({ error: 'Access denied: Only club officers can view the attendee roster and payment records' });
+    }
 
     const { rows } = await db.query(`
       SELECT 
@@ -560,7 +577,7 @@ router.get('/:id/qa', async (req, res) => {
     if (authHeader && authHeader.startsWith('Bearer ')) {
       try {
         const jwt = require('jsonwebtoken');
-        const decoded = jwt.verify(authHeader.split(' ')[1], process.env.JWT_SECRET || 'clubsync-secret-key-change-in-production');
+        const decoded = jwt.verify(authHeader.split(' ')[1], JWT_SECRET);
         currentUserId = decoded.id;
       } catch (e) {}
     }
@@ -665,13 +682,30 @@ router.post('/:id/qa/:questionId/upvote', requireAuth, async (req, res) => {
   }
 });
 
-// Toggle Pin on Question
+// Helper to check if requester is officer of the event's club
+async function checkEventOfficer(eventId, userId) {
+  const evRes = await db.query('SELECT club_id FROM events WHERE id = $1', [eventId]);
+  if (evRes.rows.length === 0) return false;
+  const officerCheck = await db.query(
+    'SELECT role FROM club_members WHERE club_id = $1 AND user_id = $2',
+    [evRes.rows[0].club_id, userId]
+  );
+  return officerCheck.rows.length > 0 &&
+    (OFFICER_ROLES || ['President', 'Vice President', 'Secretary', 'Treasurer', 'officer', 'Officer']).includes(officerCheck.rows[0].role);
+}
+
+// Toggle Pin on Question (Officers only)
 router.patch('/:id/qa/:questionId/pin', requireAuth, async (req, res) => {
   try {
-    const { questionId } = req.params;
+    const { id: eventId, questionId } = req.params;
+    const isOfficer = await checkEventOfficer(eventId, req.user.id);
+    if (!isOfficer) {
+      return res.status(403).json({ error: 'Only club officers can pin questions to the stage' });
+    }
+
     const { rows } = await db.query(
-      `UPDATE event_qa_questions SET is_pinned = NOT is_pinned WHERE id = $1 RETURNING *`,
-      [questionId]
+      `UPDATE event_qa_questions SET is_pinned = NOT is_pinned WHERE id = $1 AND event_id = $2 RETURNING *`,
+      [questionId, eventId]
     );
     if (rows.length === 0) return res.status(404).json({ error: 'Question not found' });
     res.json(rows[0]);
@@ -681,16 +715,21 @@ router.patch('/:id/qa/:questionId/pin', requireAuth, async (req, res) => {
   }
 });
 
-// Mark Question as Answered
+// Mark Question as Answered (Officers only)
 router.patch('/:id/qa/:questionId/answer', requireAuth, async (req, res) => {
   try {
-    const { questionId } = req.params;
+    const { id: eventId, questionId } = req.params;
+    const isOfficer = await checkEventOfficer(eventId, req.user.id);
+    if (!isOfficer) {
+      return res.status(403).json({ error: 'Only club officers can answer questions on stage' });
+    }
+
     const { answer_text } = req.body;
     const { rows } = await db.query(
       `UPDATE event_qa_questions 
        SET is_answered = true, answer_text = $1 
-       WHERE id = $2 RETURNING *`,
-      [answer_text ? String(answer_text).trim() : 'Answered live by speaker on stage.', questionId]
+       WHERE id = $2 AND event_id = $3 RETURNING *`,
+      [answer_text ? String(answer_text).trim() : 'Answered live by speaker on stage.', questionId, eventId]
     );
     if (rows.length === 0) return res.status(404).json({ error: 'Question not found' });
     res.json(rows[0]);
@@ -700,10 +739,20 @@ router.patch('/:id/qa/:questionId/answer', requireAuth, async (req, res) => {
   }
 });
 
-// Delete Question
+// Delete Question (Author or Officer only)
 router.delete('/:id/qa/:questionId', requireAuth, async (req, res) => {
   try {
-    const { questionId } = req.params;
+    const { id: eventId, questionId } = req.params;
+    const qRes = await db.query('SELECT user_id FROM event_qa_questions WHERE id = $1', [questionId]);
+    if (qRes.rows.length === 0) return res.status(404).json({ error: 'Question not found' });
+
+    const isAuthor = qRes.rows[0].user_id === req.user.id;
+    const isOfficer = await checkEventOfficer(eventId, req.user.id);
+
+    if (!isAuthor && !isOfficer) {
+      return res.status(403).json({ error: 'Unauthorized to delete this question' });
+    }
+
     await db.query(`DELETE FROM event_qa_questions WHERE id = $1`, [questionId]);
     res.json({ success: true });
   } catch (err) {

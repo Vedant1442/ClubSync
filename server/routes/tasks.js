@@ -72,24 +72,41 @@ router.post('/', requireAuth, requireOfficer('club_id'), async (req, res) => {
   }
 });
 
-// Update task status
+// Update task status (Authorized: Assignee, Creator, or Club Member/Officer)
 const VALID_STATUSES = ['todo', 'in_progress', 'done'];
 
 router.put('/:id/status', requireAuth, async (req, res) => {
   try {
     const taskId = req.params.id;
     const { status } = req.body;
+    const userId = req.user.id;
 
     if (!VALID_STATUSES.includes(status)) {
       return res.status(400).json({ error: 'Invalid task status. Allowed: todo, in_progress, done' });
+    }
+
+    // Verify task exists and check authorization
+    const taskRes = await db.query('SELECT * FROM tasks WHERE id = $1', [taskId]);
+    if (taskRes.rows.length === 0) return res.status(404).json({ error: 'Task not found' });
+    const task = taskRes.rows[0];
+
+    const isAssignee = task.assignee_id === userId;
+    const isCreator = task.created_by === userId;
+
+    if (!isAssignee && !isCreator) {
+      const memberCheck = await db.query(
+        'SELECT id FROM club_members WHERE club_id = $1 AND user_id = $2',
+        [task.club_id, userId]
+      );
+      if (memberCheck.rows.length === 0) {
+        return res.status(403).json({ error: 'Unauthorized: You must be a member of this club or the task assignee to update status' });
+      }
     }
 
     const { rows } = await db.query(
       'UPDATE tasks SET status = $1 WHERE id = $2 RETURNING *',
       [status, taskId]
     );
-
-    if (rows.length === 0) return res.status(404).json({ error: 'Task not found' });
     
     res.json(rows[0]);
   } catch (error) {

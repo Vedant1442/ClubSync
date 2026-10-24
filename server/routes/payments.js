@@ -258,7 +258,23 @@ router.get('/:id/receipt', requireAuth, async (req, res) => {
       return res.status(404).json({ error: 'Receipt not found' });
     }
 
-    res.json(rows[0]);
+    const payment = rows[0];
+    const isOwner = payment.user_id === req.user.id;
+
+    if (!isOwner) {
+      const officerCheck = await db.query(
+        'SELECT role FROM club_members WHERE club_id = $1 AND user_id = $2',
+        [payment.club_id, req.user.id]
+      );
+      const isOfficer = officerCheck.rows.length > 0 &&
+        ['President', 'Vice President', 'Treasurer', 'Secretary', 'officer', 'Officer', 'Admin', 'admin'].includes(officerCheck.rows[0].role);
+
+      if (!isOfficer) {
+        return res.status(403).json({ error: 'Unauthorized: You can only view your own receipts or receipts for clubs you administer' });
+      }
+    }
+
+    res.json(payment);
   } catch (error) {
     console.error('[Get Receipt Error]:', error);
     res.status(500).json({ error: 'Failed to retrieve payment receipt' });

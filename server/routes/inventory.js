@@ -52,18 +52,36 @@ router.post('/clubs/:clubId/items', requireAuth, requireOfficer('clubId'), async
   }
 });
 
-// GET all checkout requests for a club
+// GET all checkout requests for a club (Scoped: Officers see all, students see their own)
 router.get('/clubs/:clubId/requests', requireAuth, async (req, res) => {
   try {
     const { clubId } = req.params;
-    const { rows } = await db.query(
-      `SELECT r.*, i.name as item_name, i.category as item_category, i.storage_location
-       FROM club_inventory_requests r
-       JOIN club_inventory_items i ON r.item_id = i.id
-       WHERE r.club_id = $1
-       ORDER BY r.created_at DESC`,
-      [clubId]
+    const userId = req.user.id;
+
+    // Check if requester is officer
+    const officerCheck = await db.query(
+      'SELECT role FROM club_members WHERE club_id = $1 AND user_id = $2',
+      [clubId, userId]
     );
+    const isOfficer = officerCheck.rows.length > 0 &&
+      ['President', 'Vice President', 'Secretary', 'Treasurer', 'officer', 'Officer', 'Admin', 'admin'].includes(officerCheck.rows[0].role);
+
+    let query = `
+      SELECT r.*, i.name as item_name, i.category as item_category, i.storage_location
+      FROM club_inventory_requests r
+      JOIN club_inventory_items i ON r.item_id = i.id
+      WHERE r.club_id = $1
+    `;
+    const params = [clubId];
+
+    if (!isOfficer) {
+      params.push(userId);
+      query += ` AND r.user_id = $2`;
+    }
+
+    query += ` ORDER BY r.created_at DESC`;
+
+    const { rows } = await db.query(query, params);
     res.json(rows);
   } catch (err) {
     console.error('[Get Inventory Requests Error]:', err);
