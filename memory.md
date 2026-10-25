@@ -21,7 +21,7 @@
 | **Backend** | Node.js 20+, Express.js, Helmet, CORS, Compression, Express-Rate-Limit, JWT, Passport, Multer |
 | **Database** | **Neon Serverless PostgreSQL** (`pg` connection pool with SSL), 100% Parameterized SQL (`$1, $2...`) |
 | **Integrations**| Discord Webhooks (Embeds), Telegram Bot API, Groq AI (`llama3-8b-8192` for club RAG & meeting summaries) |
-| **DevOps & CI/CD** | GitHub Actions (`.github/workflows/ci.yml`), Dependabot, MIT License |
+| **DevOps & CI/CD** | GitHub Actions (`.github/workflows/ci.yml`), MIT License |
 
 ---
 
