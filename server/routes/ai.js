@@ -4,13 +4,34 @@ const db = require('../db');
 const Groq = require('groq-sdk');
 const { requireAuth } = require('../middleware/auth');
 
-const GROQ_MODEL = process.env.GROQ_MODEL || 'llama-3.1-8b-instant';
+const GROQ_MODEL = process.env.GROQ_MODEL || 'openai/gpt-oss-120b';
+const GROQ_FALLBACK_MODELS = ['openai/gpt-oss-120b', 'openai/gpt-oss-20b', 'qwen/qwen3.8-27b'];
 const hasGroqKey = Boolean(
   process.env.GROQ_API_KEY && 
   process.env.GROQ_API_KEY !== 'mock-key' && 
   process.env.GROQ_API_KEY.startsWith('gsk_')
 );
 const groq = hasGroqKey ? new Groq({ apiKey: process.env.GROQ_API_KEY }) : null;
+
+// Multi-Model Groq Chat Caller with Fallback
+async function callGroqChat(messages, temperature = 0.7) {
+  if (!groq) return null;
+  const models = [GROQ_MODEL, ...GROQ_FALLBACK_MODELS.filter(m => m !== GROQ_MODEL)];
+  for (const model of models) {
+    try {
+      const completion = await groq.chat.completions.create({
+        model,
+        messages,
+        temperature,
+      });
+      const content = completion.choices[0]?.message?.content;
+      if (content) return content;
+    } catch (err) {
+      console.warn(`[Groq Model ${model} failed]:`, err.message);
+    }
+  }
+  return null;
+}
 
 // Helper: Intelligent Local Meeting Summarizer Fallback
 function generateLocalMeetingSummary(minutes) {
@@ -59,28 +80,16 @@ router.post('/summarize', requireAuth, async (req, res) => {
       return res.status(400).json({ error: 'Meeting minutes text is too large (max 50,000 characters)' });
     }
 
-    let summary = '';
-    
-    if (groq) {
-      try {
-        const completion = await groq.chat.completions.create({
-          messages: [
-            {
-              role: "system",
-              content: "You are an executive meeting recorder. Summarize the minutes into clean, concise bullet points: Key Takeaways, Decisions Made, and Action Items.",
-            },
-            {
-              role: "user",
-              content: minutes,
-            },
-          ],
-          model: GROQ_MODEL,
-        });
-        summary = completion.choices[0]?.message?.content;
-      } catch (groqErr) {
-        console.warn('[AI Summarize Groq API Fallback]:', groqErr.message);
-      }
-    }
+    let summary = await callGroqChat([
+      {
+        role: "system",
+        content: "You are an executive meeting recorder. Summarize the minutes into clean, concise bullet points: Key Takeaways, Decisions Made, and Action Items.",
+      },
+      {
+        role: "user",
+        content: minutes,
+      },
+    ], 0.2);
 
     if (!summary) {
       summary = generateLocalMeetingSummary(minutes);
@@ -99,7 +108,7 @@ router.post('/summarize', requireAuth, async (req, res) => {
   }
 });
 
-// 2. Club Knowledge Assistant (RAG with Groq Llama-3.1 & Intelligent Campus Engine Fallback)
+// 2. Club Knowledge Assistant (RAG with Groq OpenAI-120B & Campus Fallback)
 router.post('/chat', requireAuth, async (req, res) => {
   try {
     const { clubId, question } = req.body;
@@ -182,37 +191,23 @@ router.post('/chat', requireAuth, async (req, res) => {
       context += `Club Constitution (${constitution.title || 'Official By-Laws'} v${constitution.version}):\n${constitution.content.slice(0, 1500)}\n\n`;
     }
 
-    let answer = '';
+    let answer = await callGroqChat([
+      {
+        role: "system",
+        content: `You are ClubSync AI, a friendly, approachable, and witty student coordinator for "${club.name}" at PICT Pune.
+Answer the student's question in a warm, natural, human conversational tone (like a knowledgeable, helpful senior talking to a junior in the college canteen).
+Use the live club records below for accurate facts (officer names, upcoming events, dates, venues, AICTE credits, sponsors, mentors, by-laws), but synthesize them into natural, fluid, expressive speech rather than robotic bullet point dumps.
+Feel free to offer genuine encouraging advice, tips on getting started, and relatable campus guidance.
+Format responses in clean GitHub Markdown with emojis, clean paragraphs, and bold text.
 
-    // If Groq is available, attempt modern Llama 3.1 generation
-    if (groq) {
-      try {
-        const completion = await groq.chat.completions.create({
-          messages: [
-            {
-              role: "system",
-              content: `You are ClubSync Knowledge AI, an intelligent assistant for "${club.name}" at PICT Pune.
-Answer student questions accurately, politely, and concisely using the club context below.
-Format responses in clean GitHub Markdown with emojis, bullet points, and bold text.
-If asked about topics not in the records, answer from general knowledge while clarifying it is not in the club archives.
-
-Club Context:
+Live Club Records:
 ${context}`,
-            },
-            {
-              role: "user",
-              content: question,
-            },
-          ],
-          model: GROQ_MODEL,
-          temperature: 0.3,
-        });
-
-        answer = completion.choices[0]?.message?.content;
-      } catch (groqErr) {
-        console.warn('[AI Chat Groq API Fallback]:', groqErr.message);
-      }
-    }
+      },
+      {
+        role: "user",
+        content: question,
+      },
+    ], 0.7);
 
     // Resilient Fallback: Conversational Natural Campus Engine
     if (!answer) {
@@ -354,35 +349,21 @@ College: Pune Institute of Computer Technology (PICT), Pune
 Attendance Leave: Official On-Duty (OD / DL) Attendance letters are automatically generated on ClubSync for all verified attendees after gate check-in.
 `;
 
-    let answer = '';
-
-    if (groq) {
-      try {
-        const completion = await groq.chat.completions.create({
-          messages: [
-            {
-              role: "system",
-              content: `You are ClubSync AI Concierge for "${event.title}" at PICT Pune.
-Answer the student's question accurately, concisely, and warmly based on the event context below.
-If asked about attendance leave, explain that students get an official On-Duty (OD) letter to submit to their HOD once checked in at the gate.
-If asked about UPI payment, explain it uses YouPI Zero-Fee UPI with a 12-digit UTR receipt.
+    let answer = await callGroqChat([
+      {
+        role: "system",
+        content: `You are ClubSync AI Concierge for "${event.title}" at PICT Pune.
+Answer the student's question warmly, accurately, and naturally like an event coordinator at the help desk.
+Explain OD leave letters, AICTE points, fees, and venue directions clearly.
 
 Context:
 ${eventContext}`,
-            },
-            {
-              role: "user",
-              content: question,
-            },
-          ],
-          model: GROQ_MODEL,
-          temperature: 0.3,
-        });
-        answer = completion.choices[0]?.message?.content;
-      } catch (groqErr) {
-        console.warn('[AI Concierge Groq API Fallback]:', groqErr.message);
-      }
-    }
+      },
+      {
+        role: "user",
+        content: question,
+      },
+    ], 0.7);
 
     if (!answer) {
       const q = question.toLowerCase();
