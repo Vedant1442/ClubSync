@@ -19,6 +19,7 @@ import ClubSponsorshipTab from '../components/ClubSponsorshipTab'
 import ClubWebhookTab from '../components/ClubWebhookTab'
 import ClubMentorshipTab from '../components/ClubMentorshipTab'
 import ClubResolutionAmendments from '../components/ClubResolutionAmendments'
+import FormattedMessage from '../components/FormattedMessage'
 import { IndianRupee, QrCode, Receipt as ReceiptIcon, Sparkles, ShieldCheck, BarChart3, Package, Handshake, Radio, HeartHandshake, GraduationCap, Scale } from 'lucide-react'
 
 // Generate a deterministic color from a string
@@ -1666,12 +1667,12 @@ export default function ClubDetail() {
                       AI
                     </div>
                   )}
-                  <div className={`p-3.5 rounded-2xl text-xs max-w-lg leading-relaxed whitespace-pre-wrap ${
+                  <div className={`p-3.5 rounded-2xl text-xs max-w-lg leading-relaxed ${
                     msg.role === 'user' 
                       ? 'bg-primary text-white rounded-tr-none' 
                       : 'bg-surface-muted text-text dark:text-zinc-200 border border-border/50 rounded-tl-none shadow-sm'
                   }`}>
-                    {msg.content}
+                    <FormattedMessage content={msg.content} isUser={msg.role === 'user'} />
                   </div>
                 </div>
               ))}

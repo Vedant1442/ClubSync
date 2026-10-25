@@ -198,7 +198,7 @@ router.post('/chat', requireAuth, async (req, res) => {
 Answer the student's question in a warm, natural, human conversational tone (like a knowledgeable, helpful senior talking to a junior in the college canteen).
 Use the live club records below for accurate facts (officer names, upcoming events, dates, venues, AICTE credits, sponsors, mentors, by-laws), but synthesize them into natural, fluid, expressive speech rather than robotic bullet point dumps.
 Feel free to offer genuine encouraging advice, tips on getting started, and relatable campus guidance.
-Format responses in clean GitHub Markdown with emojis, clean paragraphs, and bold text.
+Keep markdown natural, clean, and readable. Avoid unnecessary asterisks or symbol clutter. Format with clean paragraphs, bullet points, and emojis.
 
 Live Club Records:
 ${context}`,

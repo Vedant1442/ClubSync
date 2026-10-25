@@ -4,6 +4,7 @@ import {
   Bot, Send, X, Sparkles, MessageSquare, MapPin, 
   HelpCircle, Zap, GraduationCap, ChevronRight, CornerDownLeft
 } from 'lucide-react'
+import FormattedMessage from './FormattedMessage'
 
 export default function EventAIConciergeModal({ isOpen, onClose, event, club }) {
   const [messages, setMessages] = useState([
@@ -118,12 +119,12 @@ export default function EventAIConciergeModal({ isOpen, onClose, event, club }) 
               }`}>
                 {m.role === 'user' ? 'You' : <Bot size={14} />}
               </div>
-              <div className={`max-w-[85%] p-3.5 rounded-2xl leading-relaxed whitespace-pre-wrap ${
+              <div className={`max-w-[85%] p-3.5 rounded-2xl leading-relaxed ${
                 m.role === 'user'
                   ? 'bg-primary text-white rounded-tr-none'
                   : 'bg-white dark:bg-surface border border-border text-text rounded-tl-none shadow-sm'
               }`}>
-                {m.content}
+                <FormattedMessage content={m.content} isUser={m.role === 'user'} />
               </div>
             </div>
           ))}
