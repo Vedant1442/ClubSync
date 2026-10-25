@@ -166,18 +166,6 @@ export default function Landing() {
             </span>
           </Link>
 
-          {/* Desktop Nav */}
-          <nav className="hidden md:flex items-center gap-5 text-xs font-medium text-text-secondary">
-            <a href="#sandbox" className="text-primary font-semibold hover:text-primary-dark transition-colors flex items-center gap-1">
-              <Zap size={13} /> Evaluation Sandbox
-            </a>
-            <a href="#systems" className="hover:text-text transition-colors">Systems</a>
-            <a href="#societies" className="hover:text-text transition-colors">Societies</a>
-            <Link to="/verify/PICT-CERT-2026-X89" className="hover:text-text transition-colors flex items-center gap-1">
-              <ShieldCheck size={13} className="text-emerald-500" /> Public Registry
-            </Link>
-          </nav>
-
           {/* Right Action */}
           <div className="flex items-center gap-2">
             <button 
