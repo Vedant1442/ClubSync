@@ -66,7 +66,11 @@ pm2 startup systemd -u $USER --hp /home/$USER | sudo bash || true
 
 echo "🎨 [5/6] Building React Frontend..."
 cd /var/www/clubsync
-echo "VITE_API_URL=http://$PUBLIC_IP" > .env.production
+cat << EOF > .env.production
+VITE_API_URL=http://$PUBLIC_IP
+VITE_SUPABASE_URL=https://dnlstelgkpcjwaarnrwr.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRubHN0ZWxna3BjandhYXJucndyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcwNjU3MzgsImV4cCI6MjEwMjY0MTczOH0.8YDSl25Lr1qxHaGXfnwRsTXQF60ynDpQEiN7F99IDlU
+EOF
 npm install
 npm run build
 
