@@ -89,6 +89,111 @@ app.use('/api/auth/register', authRateLimiter);
 const passport = require('./passport');
 app.use(passport.initialize());
 
+// 6.5 Root Welcome Endpoint
+app.get('/', (req, res) => {
+  if (req.accepts('html')) {
+    return res.send(`
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>ClubSync API Server</title>
+        <style>
+          body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #0b0f19;
+            color: #f3f4f6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+          }
+          .card {
+            background: #111827;
+            border: 1px solid #1f2937;
+            border-radius: 16px;
+            padding: 2.5rem;
+            max-width: 520px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+            text-align: center;
+          }
+          .badge {
+            display: inline-block;
+            background: #064e3b;
+            color: #34d399;
+            font-weight: 600;
+            font-size: 0.85rem;
+            padding: 0.35rem 0.85rem;
+            border-radius: 9999px;
+            margin-bottom: 1rem;
+          }
+          h1 {
+            margin: 0 0 0.75rem;
+            font-size: 1.75rem;
+            font-weight: 700;
+          }
+          p {
+            color: #9ca3af;
+            line-height: 1.6;
+            margin: 0 0 1.5rem;
+          }
+          .links {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+          }
+          a {
+            display: inline-flex;
+            align-items: center;
+            background: #4f46e5;
+            color: #fff;
+            padding: 0.65rem 1.25rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.9rem;
+            transition: background 0.2s;
+          }
+          a:hover {
+            background: #4338ca;
+          }
+          a.secondary {
+            background: #1f2937;
+            color: #d1d5db;
+          }
+          a.secondary:hover {
+            background: #374151;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="card">
+          <div class="badge">● Server Online</div>
+          <h1>ClubSync API Server</h1>
+          <p>The Express backend for ClubSync is running smoothly and connected to Neon Postgres. The React frontend is running on port 5173.</p>
+          <div class="links">
+            <a href="http://localhost:5173" target="_blank">Open App (localhost:5173) &rarr;</a>
+            <a class="secondary" href="/api/health">Health Check API</a>
+          </div>
+        </div>
+      </body>
+      </html>
+    `);
+  }
+
+  res.json({
+    name: 'ClubSync API Server',
+    status: 'online',
+    version: '1.0.0',
+    frontend: 'http://localhost:5173',
+    healthCheck: '/api/health',
+    timestamp: new Date().toISOString()
+  });
+});
+
 // 7. Health Check with Live DB Ping
 app.get('/api/health', async (req, res) => {
   try {
@@ -147,9 +252,59 @@ app.use('/api/webhooks', webhooksRouter);
 app.use('/api/mentorship', mentorshipRouter);
 app.use('/api/resolutions', resolutionsRouter);
 
-// 9. 404 Handler for Unknown API Endpoints
-app.use('/api', (req, res) => {
-  res.status(404).json({ error: `API endpoint '${req.method} ${req.originalUrl}' not found` });
+// 9. 404 Handler for Unknown Endpoints
+app.use((req, res) => {
+  if (req.accepts('html')) {
+    return res.status(404).send(`
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <title>404 Not Found - ClubSync API</title>
+        <style>
+          body {
+            margin: 0;
+            background: #0b0f19;
+            color: #f3f4f6;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+          }
+          .card {
+            background: #111827;
+            border: 1px solid #1f2937;
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+            max-width: 440px;
+          }
+          code {
+            background: #1f2937;
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            color: #f87171;
+          }
+          a {
+            color: #818cf8;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 1rem;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="card">
+          <h2>404 - Endpoint Not Found</h2>
+          <p style="color:#9ca3af;">Route <code>${req.method} ${req.originalUrl}</code> does not exist on this server.</p>
+          <a href="/">← Return to API Home</a>
+        </div>
+      </body>
+      </html>
+    `);
+  }
+  res.status(404).json({ error: `Endpoint '${req.method} ${req.originalUrl}' not found` });
 });
 
 // 10. Centralized Production Error Handling Middleware
