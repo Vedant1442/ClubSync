@@ -18,7 +18,8 @@ import ClubInventoryTab from '../components/ClubInventoryTab'
 import ClubSponsorshipTab from '../components/ClubSponsorshipTab'
 import ClubWebhookTab from '../components/ClubWebhookTab'
 import ClubMentorshipTab from '../components/ClubMentorshipTab'
-import { IndianRupee, QrCode, Receipt as ReceiptIcon, Sparkles, ShieldCheck, BarChart3, Package, Handshake, Radio, HeartHandshake, GraduationCap } from 'lucide-react'
+import ClubResolutionAmendments from '../components/ClubResolutionAmendments'
+import { IndianRupee, QrCode, Receipt as ReceiptIcon, Sparkles, ShieldCheck, BarChart3, Package, Handshake, Radio, HeartHandshake, GraduationCap, Scale } from 'lucide-react'
 
 // Generate a deterministic color from a string
 const getClubColor = (name = '') => {
@@ -49,6 +50,7 @@ export default function ClubDetail() {
   const club = clubs.find(c => c.id === clubId)
 
   // Tab states
+  const [constitutionSubTab, setConstitutionSubTab] = useState('resolutions') // 'resolutions' | 'document'
   const [constVersion, setConstVersion] = useState('')
   const [constTitle, setConstTitle] = useState('')
   const [constContent, setConstContent] = useState('')
@@ -500,7 +502,36 @@ export default function ClubDetail() {
 
         {/* CONSTITUTION TAB */}
         {activeTab === 'constitution' && (
-          <div className="grid lg:grid-cols-3 gap-6">
+          <div className="space-y-6">
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <div className="flex items-center gap-1.5 bg-surface-dim p-1 rounded-xl border border-border">
+                <button
+                  type="button"
+                  onClick={() => setConstitutionSubTab('resolutions')}
+                  className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                    constitutionSubTab === 'resolutions' ? 'bg-primary text-white shadow-sm' : 'text-text-secondary hover:text-text'
+                  }`}
+                >
+                  <Scale size={14} />
+                  <span>Amendment Resolutions & Voting</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setConstitutionSubTab('document')}
+                  className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                    constitutionSubTab === 'document' ? 'bg-primary text-white shadow-sm' : 'text-text-secondary hover:text-text'
+                  }`}
+                >
+                  <BookOpen size={14} />
+                  <span>Active Constitution & History</span>
+                </button>
+              </div>
+            </div>
+
+            {constitutionSubTab === 'resolutions' ? (
+              <ClubResolutionAmendments clubId={club.id} currentUser={currentUser} isOfficer={isOfficer} />
+            ) : (
+              <div className="grid lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
               {/* Document display */}
               <div className="bg-white dark:bg-surface rounded-2xl border border-border p-6 shadow-sm">
@@ -644,6 +675,8 @@ export default function ClubDetail() {
                 </div>
               </div>
             </div>
+          </div>
+            )}
           </div>
         )}
 
