@@ -314,83 +314,74 @@ export default function EventDetail() {
             </div>
 
             {/* Quick Turnout Telemetry Badge */}
-            <div className="flex items-center gap-3 bg-gray-800/80 px-4 py-2 rounded-2xl border border-gray-700">
-              <Radio size={14} className="text-emerald-400 animate-pulse" />
+            <div className="flex items-center gap-2.5 bg-surface-dim px-3 py-1.5 rounded-lg border border-border">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               <div className="text-xs">
-                <span className="text-gray-400 font-medium">Auditorium Turnout: </span>
-                <span className="font-mono font-black text-emerald-400 text-sm">{checkedInCount} / {attendees.length || attendeesCount}</span>
-                <span className="text-gray-400 font-medium"> Checked In</span>
+                <span className="text-text-secondary">Turnout: </span>
+                <span className="font-mono font-bold text-text">{checkedInCount} / {attendees.length || attendeesCount}</span>
+                <span className="text-text-secondary"> checked in</span>
               </div>
             </div>
           </div>
 
-          {/* Grouped Actions: Prominent Desk Kiosk Mode + Suite Actions */}
-          <div className="pt-4 flex flex-wrap items-center justify-between gap-3">
-            {/* Primary Feature: Vibrant Desk Kiosk Mode */}
+          {/* Officer Command Bar */}
+          <div className="pt-3 flex flex-wrap items-center justify-between gap-2.5 border-t border-border mt-3">
             <button
               onClick={() => setIsKioskModalOpen(true)}
-              className="px-5 py-3 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-600 hover:from-emerald-600 hover:to-cyan-700 text-white font-black text-xs md:text-sm rounded-2xl flex items-center gap-2.5 shadow-xl shadow-teal-500/25 ring-2 ring-emerald-400/40 hover:scale-[1.02] transition-all"
-              title="Auditorium Check-In Scanner"
+              className="px-4 py-2 bg-primary hover:bg-primary-dark text-white font-semibold text-xs rounded-lg flex items-center gap-2 shadow-xs transition-colors"
+              title="Launch Auditorium Gate Check-In & Badge Printing Kiosk"
             >
-              <div className="relative flex h-2.5 w-2.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-white"></span>
-              </div>
-              <Printer size={18} />
-              <span>🖨️ Desk Kiosk Mode</span>
-              <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-black/25 text-emerald-100 hidden sm:inline-block">
-                Badge Scanner
-              </span>
+              <ScanBarcode size={15} />
+              <span>Launch Desk Kiosk</span>
             </button>
 
-            {/* Clean Grouping for Officer Tools: Dean OD Letter, Live Stage Q&A, Multi-Channel Broadcast */}
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-1.5">
               <button
                 onClick={() => {
                   setSelectedAttendeeForOD(null)
                   setIsODModalOpen(true)
                 }}
-                className="px-3.5 py-2.5 bg-surface hover:bg-surface-muted border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm transition-all hover:scale-[1.01]"
-                title="Generate Official Dean On-Duty (OD) Attendance Letter for Students"
+                className="px-3 py-1.5 bg-surface-dim hover:bg-surface-muted border border-border text-text rounded-lg text-xs font-medium flex items-center gap-1.5 shadow-xs transition-colors"
+                title="Generate Official Dean On-Duty (OD) Attendance Letter"
               >
-                <FileText size={15} className="text-emerald-500" />
-                <span>Dean OD Letter</span>
+                <FileText size={14} className="text-emerald-500" />
+                <span>OD Letter</span>
               </button>
 
               <button
                 onClick={() => setIsLiveQAModalOpen(true)}
-                className="px-3.5 py-2.5 bg-surface hover:bg-surface-muted border border-indigo-500/30 text-indigo-600 dark:text-indigo-400 rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm transition-all hover:scale-[1.01]"
-                title="Moderate Live Stage Questions & Launch Stage Projector View"
+                className="px-3 py-1.5 bg-surface-dim hover:bg-surface-muted border border-border text-text rounded-lg text-xs font-medium flex items-center gap-1.5 shadow-xs transition-colors"
+                title="Moderate Live Stage Questions"
               >
-                <MessageSquare size={15} className="text-indigo-500" />
-                <span>Live Stage Q&A</span>
+                <MessageSquare size={14} className="text-indigo-500" />
+                <span>Live Q&A</span>
               </button>
 
               <button
                 onClick={() => setIsBroadcastModalOpen(true)}
-                className="px-3.5 py-2.5 bg-surface hover:bg-surface-muted border border-amber-500/30 text-amber-600 dark:text-amber-400 rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm transition-all hover:scale-[1.01]"
-                title="Broadcast urgent notification to all registered attendees"
+                className="px-3 py-1.5 bg-surface-dim hover:bg-surface-muted border border-border text-text rounded-lg text-xs font-medium flex items-center gap-1.5 shadow-xs transition-colors"
+                title="Broadcast notification to attendees"
               >
-                <Megaphone size={15} className="text-amber-500" />
+                <Megaphone size={14} className="text-amber-500" />
                 <span>Broadcast</span>
               </button>
 
               <button
                 onClick={() => setIsScannerModalOpen(true)}
-                className="px-3.5 py-2.5 bg-surface hover:bg-surface-muted border border-primary/30 text-text rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm transition-all hover:scale-[1.01]"
-                title="Open Gate Barcode & QR Camera Scanner"
+                className="px-3 py-1.5 bg-surface-dim hover:bg-surface-muted border border-border text-text rounded-lg text-xs font-medium flex items-center gap-1.5 shadow-xs transition-colors"
+                title="Open Camera Scanner"
               >
-                <QrCode size={15} className="text-primary" />
-                <span>Gate Scanner</span>
+                <QrCode size={14} className="text-primary" />
+                <span>Scanner</span>
               </button>
 
               <button
                 onClick={handleExportAttendeesCSV}
                 disabled={exportingAttendees}
-                className="px-3.5 py-2.5 bg-surface hover:bg-surface-muted border border-border text-text-secondary hover:text-text rounded-xl text-xs font-semibold flex items-center gap-2 shadow-sm transition-colors"
-                title="Download official roster for college faculty / attendance records"
+                className="px-3 py-1.5 bg-surface-dim hover:bg-surface-muted border border-border text-text-secondary hover:text-text rounded-lg text-xs font-medium flex items-center gap-1.5 shadow-xs transition-colors"
+                title="Export attendee roster as CSV"
               >
-                <FileSpreadsheet size={15} className="text-emerald-500" />
+                <FileSpreadsheet size={14} className="text-text-secondary" />
                 <span>{exportingAttendees ? 'Exporting...' : 'Export CSV'}</span>
               </button>
             </div>
