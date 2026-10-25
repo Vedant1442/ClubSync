@@ -4,7 +4,7 @@ import { toast } from 'sonner'
 import { 
   ArrowLeft, Calendar, Clock, MapPin, Users, CheckCircle, 
   Share2, IndianRupee, ShieldCheck, Receipt, Sparkles, 
-  Ticket, Award, QrCode, MessageCircle, FileSpreadsheet, Download,
+  Ticket, Award, QrCode, MessageCircle, MessageSquare, FileText, FileSpreadsheet, Download,
   Megaphone, AlertTriangle, Bot, CalendarPlus, CalendarDays, Navigation, Printer
 } from 'lucide-react'
 import { useClubSync } from '../context/ClubSyncContext'
