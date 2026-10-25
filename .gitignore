@@ -4,6 +4,13 @@ dist
 *.log
 .DS_Store
 
+# Archives & Temporary Test Artifacts
+*.zip
+*.tar.gz
+test_zip/
+temp/
+scratch/
+
 # Local Environment Variables
 .env
 .env.local
