@@ -184,7 +184,7 @@ export default function Landing() {
       {/* =========================================================================
           LANDING TOP HEADER / NAVBAR
       ========================================================================= */}
-      <header className="sticky top-0 z-40 bg-white/80 dark:bg-[#12121f]/80 backdrop-blur-xl border-b border-border">
+      <header className="sticky top-0 z-40 bg-surface/80 backdrop-blur-xl border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2.5 group">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-primary to-indigo-600 flex items-center justify-center text-white font-extrabold text-base shadow-md shadow-primary/20 group-hover:scale-105 transition-transform duration-200">
@@ -577,7 +577,7 @@ export default function Landing() {
       {/* =========================================================================
           REAL PICT SOCIETIES SHOWCASE
       ========================================================================= */}
-      <section id="societies" className="scroll-mt-20 bg-white dark:bg-[#12121e] border-y border-border py-20 transition-colors">
+      <section id="societies" className="scroll-mt-20 bg-surface-dim border-y border-border py-20 transition-colors">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
@@ -769,7 +769,7 @@ export default function Landing() {
       {/* =========================================================================
           FOOTER
       ========================================================================= */}
-      <footer className="border-t border-border bg-white dark:bg-[#0e0e1a] py-12 transition-colors">
+      <footer className="border-t border-border bg-surface py-12 transition-colors">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
             <div className="md:col-span-2">

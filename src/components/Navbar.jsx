@@ -53,7 +53,7 @@ export default function Navbar() {
   return (
     <>
       {/* Desktop Top Navbar */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/85 dark:bg-[#12121f]/90 backdrop-blur-xl border-b border-border/80 shadow-xs transition-colors duration-200">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-surface/85 backdrop-blur-xl border-b border-border shadow-xs transition-colors duration-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
           
           {/* Brand Mark */}
@@ -194,7 +194,7 @@ export default function Navbar() {
       </nav>
 
       {/* Mobile Bottom Navigation Bar */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/90 dark:bg-[#12121f]/95 backdrop-blur-xl border-t border-border shadow-2xl px-2 py-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] transition-colors">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-surface/95 backdrop-blur-xl border-t border-border shadow-2xl px-2 py-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] transition-colors">
         <div className="flex items-center justify-around">
           {navLinks.map(({ to, icon: Icon, label }) => {
             const active = location.pathname.startsWith(to)

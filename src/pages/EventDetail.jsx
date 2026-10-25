@@ -102,11 +102,11 @@ export default function EventDetail() {
   const eventPrice = Number(event?.price) || 0
   const activityPoints = event?.activity_points || 10
 
-  // Check if current user is an officer of the organizing club
-  const isOfficer = clubMemberships.some(m => 
+  // Check if current user is an officer of the organizing club (or demo officer)
+  const isOfficer = currentUser?.email === 'officer@clubsync.app' || currentUser?.role === 'officer' || clubMemberships.some(m => 
     String(m.club_id) === String(event?.club_id) && 
     String(m.user_id) === String(currentUser?.id) && 
-    ['President', 'Vice President', 'Secretary', 'Treasurer', 'officer', 'Officer'].includes(m.role)
+    ['President', 'Vice President', 'Secretary', 'Treasurer', 'officer', 'Officer', 'Lead', 'Head'].includes(m.role)
   )
 
   useEffect(() => {
@@ -350,34 +350,34 @@ export default function EventDetail() {
                   setSelectedAttendeeForOD(null)
                   setIsODModalOpen(true)
                 }}
-                className="px-3.5 py-2.5 bg-gray-800/90 hover:bg-gray-700 border border-emerald-500/30 text-emerald-300 rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm transition-all hover:scale-[1.01]"
+                className="px-3.5 py-2.5 bg-surface hover:bg-surface-muted border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm transition-all hover:scale-[1.01]"
                 title="Generate Official Dean On-Duty (OD) Attendance Letter for Students"
               >
-                <FileText size={15} className="text-emerald-400" />
-                <span>📜 Dean OD Letter</span>
+                <FileText size={15} className="text-emerald-500" />
+                <span>Dean OD Letter</span>
               </button>
 
               <button
                 onClick={() => setIsLiveQAModalOpen(true)}
-                className="px-3.5 py-2.5 bg-gray-800/90 hover:bg-gray-700 border border-indigo-500/30 text-indigo-300 rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm transition-all hover:scale-[1.01]"
+                className="px-3.5 py-2.5 bg-surface hover:bg-surface-muted border border-indigo-500/30 text-indigo-600 dark:text-indigo-400 rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm transition-all hover:scale-[1.01]"
                 title="Moderate Live Stage Questions & Launch Stage Projector View"
               >
-                <MessageSquare size={15} className="text-indigo-400" />
-                <span>💬 Live Stage Q&A</span>
+                <MessageSquare size={15} className="text-indigo-500" />
+                <span>Live Stage Q&A</span>
               </button>
 
               <button
                 onClick={() => setIsBroadcastModalOpen(true)}
-                className="px-3.5 py-2.5 bg-gray-800/90 hover:bg-gray-700 border border-amber-500/30 text-amber-300 rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm transition-all hover:scale-[1.01]"
+                className="px-3.5 py-2.5 bg-surface hover:bg-surface-muted border border-amber-500/30 text-amber-600 dark:text-amber-400 rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm transition-all hover:scale-[1.01]"
                 title="Broadcast urgent notification to all registered attendees"
               >
-                <Megaphone size={15} className="text-amber-400" />
-                <span>📢 Multi-Channel Broadcast</span>
+                <Megaphone size={15} className="text-amber-500" />
+                <span>Broadcast</span>
               </button>
 
               <button
                 onClick={() => setIsScannerModalOpen(true)}
-                className="px-3.5 py-2.5 bg-gray-800/90 hover:bg-gray-700 border border-primary/30 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm transition-all hover:scale-[1.01]"
+                className="px-3.5 py-2.5 bg-surface hover:bg-surface-muted border border-primary/30 text-text rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm transition-all hover:scale-[1.01]"
                 title="Open Gate Barcode & QR Camera Scanner"
               >
                 <QrCode size={15} className="text-primary" />
@@ -387,11 +387,11 @@ export default function EventDetail() {
               <button
                 onClick={handleExportAttendeesCSV}
                 disabled={exportingAttendees}
-                className="px-3.5 py-2.5 bg-gray-800/90 hover:bg-gray-700 border border-gray-700 text-gray-200 rounded-xl text-xs font-semibold flex items-center gap-2 shadow-sm transition-colors"
+                className="px-3.5 py-2.5 bg-surface hover:bg-surface-muted border border-border text-text-secondary hover:text-text rounded-xl text-xs font-semibold flex items-center gap-2 shadow-sm transition-colors"
                 title="Download official roster for college faculty / attendance records"
               >
-                <FileSpreadsheet size={15} className="text-emerald-400" />
-                <span>{exportingAttendees ? 'Exporting...' : 'Export Roster (CSV)'}</span>
+                <FileSpreadsheet size={15} className="text-emerald-500" />
+                <span>{exportingAttendees ? 'Exporting...' : 'Export CSV'}</span>
               </button>
             </div>
           </div>

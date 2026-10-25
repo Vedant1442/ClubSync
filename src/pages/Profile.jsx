@@ -251,12 +251,12 @@ export default function Profile() {
                         {isCheckedIn ? (
                           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-xs font-semibold">
                             <CheckCircle size={14} />
-                            <span>Checked-In at Gate • Pass Validated</span>
+                            <span>Checked-In at Gate | Pass Validated</span>
                           </div>
                         ) : (
                           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 text-xs font-semibold">
                             <QrCode size={14} />
-                            <span>Active Pass • Ready for Gate Scanner</span>
+                            <span>Active Pass | Ready for Gate Scanner</span>
                           </div>
                         )}
                       </div>

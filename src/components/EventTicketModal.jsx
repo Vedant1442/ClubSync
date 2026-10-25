@@ -208,7 +208,7 @@ export default function EventTicketModal({ isOpen, onClose, event, club, user, e
           {isOffline && (
             <div className="flex items-center justify-center gap-1.5 py-1 px-3 bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20 rounded-full text-[11px] font-semibold mx-auto max-w-xs">
               <WifiOff size={13} />
-              <span>Offline Ready • Pass validated for gate entry</span>
+              <span>Offline Ready — Pass validated for gate entry</span>
             </div>
           )}
 

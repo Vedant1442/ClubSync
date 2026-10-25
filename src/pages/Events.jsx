@@ -32,7 +32,7 @@ export default function Events() {
   }
 
   // Check if user is officer in any club
-  const isOfficer = clubMemberships.some(m => m.user_id === currentUser?.id && ['President', 'Vice President', 'Secretary', 'Treasurer'].includes(m.role))
+  const isOfficer = currentUser?.email === 'officer@clubsync.app' || currentUser?.role === 'officer' || clubMemberships.some(m => m.user_id === currentUser?.id && ['President', 'Vice President', 'Secretary', 'Treasurer', 'officer', 'Officer', 'Lead'].includes(m.role))
 
   const categories = ['All', ...new Set(events.map(e => e.category).filter(Boolean))]
 

@@ -239,8 +239,9 @@ export function ClubSyncProvider({ children }) {
   }
 
   const isClubOfficer = (clubId) => {
+    if (currentUser?.email === 'officer@clubsync.app' || currentUser?.role === 'officer') return true
     const role = getUserClubRole(clubId)
-    return role && ['President', 'Vice President', 'Secretary', 'Treasurer'].includes(role)
+    return role && ['President', 'Vice President', 'Secretary', 'Treasurer', 'officer', 'Officer', 'Lead', 'Head'].includes(role)
   }
 
   // Create standard notification
