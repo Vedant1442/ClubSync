@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { 
@@ -86,8 +86,10 @@ export default function ClubDetail() {
 
   // Chat states
   const [chatInput, setChatInput] = useState('')
+  const [isChatLoading, setIsChatLoading] = useState(false)
+  const chatBottomRef = useRef(null)
   const [chatMessages, setChatMessages] = useState([
-    { role: 'assistant', content: 'Hi, I am your ClubSync Knowledge Assistant. Ask me anything about the club documents, constitution, or meeting minutes!' }
+    { role: 'assistant', content: '👋 Hi, I am your ClubSync Knowledge Assistant! Ask me anything about our leadership, upcoming events, senior mentors, sponsors, or constitution.' }
   ])
 
   if (loading) {
@@ -234,16 +236,30 @@ export default function ClubDetail() {
     setTaskDueDate('')
   }
 
-  const handleSendChat = async (e) => {
-    e.preventDefault()
-    if (!chatInput) return
-    const userMsg = { role: 'user', content: chatInput }
+  useEffect(() => {
+    if (activeTab === 'assistant') {
+      chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }
+  }, [chatMessages, isChatLoading, activeTab])
+
+  const handleSendChat = async (e, customPrompt) => {
+    if (e && e.preventDefault) e.preventDefault()
+    const query = (customPrompt || chatInput || '').trim()
+    if (!query || isChatLoading) return
+    const userMsg = { role: 'user', content: query }
     setChatMessages(prev => [...prev, userMsg])
     setChatInput('')
+    setIsChatLoading(true)
     
-    const response = await askAI(clubId, chatInput)
-    const assistantMsg = { role: 'assistant', content: response }
-    setChatMessages(prev => [...prev, assistantMsg])
+    try {
+      const response = await askAI(clubId, query)
+      const assistantMsg = { role: 'assistant', content: response }
+      setChatMessages(prev => [...prev, assistantMsg])
+    } catch (err) {
+      setChatMessages(prev => [...prev, { role: 'assistant', content: '⚠️ Sorry, I had trouble retrieving the club records. Please try again.' }])
+    } finally {
+      setIsChatLoading(false)
+    }
   }
 
   const handleExportFinancialCSV = () => {
@@ -1624,35 +1640,94 @@ export default function ClubDetail() {
 
         {/* AI ASSISTANT TAB */}
         {activeTab === 'assistant' && (
-          <div className="max-w-3xl mx-auto bg-white dark:bg-surface border border-border rounded-2xl shadow-sm flex flex-col h-[500px]">
+          <div className="max-w-3xl mx-auto bg-white dark:bg-surface border border-border rounded-2xl shadow-sm flex flex-col h-[560px]">
+            {/* Header */}
+            <div className="px-5 py-3.5 border-b border-border flex items-center justify-between bg-surface-dim/40 rounded-t-2xl">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold text-xs">
+                  <Sparkles size={16} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-xs text-text">{club.name} Knowledge AI</h3>
+                  <p className="text-[10px] text-text-secondary">Trained on club constitution, officer roster, events & meeting archives</p>
+                </div>
+              </div>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                ● Live Data Sync
+              </span>
+            </div>
+
             {/* Chat Messages */}
             <div className="flex-1 p-6 overflow-y-auto space-y-4">
               {chatMessages.map((msg, i) => (
                 <div key={i} className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                   {msg.role !== 'user' && (
-                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold shrink-0">AI</div>
+                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold shrink-0">
+                      AI
+                    </div>
                   )}
-                  <div className={`p-3.5 rounded-2xl text-xs max-w-lg leading-relaxed ${
-                    msg.role === 'user' ? 'bg-primary text-white rounded-tr-none' : 'bg-surface-muted text-text-secondary rounded-tl-none'
+                  <div className={`p-3.5 rounded-2xl text-xs max-w-lg leading-relaxed whitespace-pre-wrap ${
+                    msg.role === 'user' 
+                      ? 'bg-primary text-white rounded-tr-none' 
+                      : 'bg-surface-muted text-text dark:text-zinc-200 border border-border/50 rounded-tl-none shadow-sm'
                   }`}>
                     {msg.content}
                   </div>
                 </div>
               ))}
+
+              {isChatLoading && (
+                <div className="flex gap-3 justify-start items-center">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold shrink-0">
+                    <Sparkles size={14} className="animate-spin text-primary" />
+                  </div>
+                  <div className="p-3.5 rounded-2xl text-xs bg-surface-muted border border-border/50 text-text-secondary rounded-tl-none flex items-center gap-1.5 shadow-sm">
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce [animation-delay:-0.3s]"></span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce [animation-delay:-0.15s]"></span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce"></span>
+                    <span className="ml-1 text-[11px] font-medium text-text-secondary">Synthesizing club records...</span>
+                  </div>
+                </div>
+              )}
+              <div ref={chatBottomRef} />
+            </div>
+
+            {/* Prompt Suggestion Chips */}
+            <div className="px-4 py-2 border-t border-border/50 bg-surface-dim/30 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+              <span className="text-[10px] text-text-secondary shrink-0 font-medium">Suggestions:</span>
+              {[
+                { label: '👑 Officers', prompt: 'Who are the club officers and executive committee?' },
+                { label: '📅 Events', prompt: 'What events, hackathons, and workshops are scheduled?' },
+                { label: '🤝 Sponsors', prompt: 'Who are the corporate sponsors and brand partners?' },
+                { label: '🧑‍🏫 Mentors', prompt: 'Who are the senior project mentors available?' },
+                { label: '📜 By-Laws', prompt: 'Tell me about the club constitution and by-laws.' },
+              ].map((chip) => (
+                <button
+                  key={chip.label}
+                  type="button"
+                  onClick={() => handleSendChat(null, chip.prompt)}
+                  disabled={isChatLoading}
+                  className="text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-surface border border-border/80 text-text-secondary hover:text-primary hover:border-primary/50 transition-colors shrink-0 disabled:opacity-50"
+                >
+                  {chip.label}
+                </button>
+              ))}
             </div>
 
             {/* Chat Input */}
-            <form onSubmit={handleSendChat} className="p-4 border-t border-border flex gap-2">
+            <form onSubmit={handleSendChat} className="p-3 border-t border-border flex gap-2">
               <input 
                 type="text" 
                 value={chatInput}
                 onChange={e => setChatInput(e.target.value)}
-                placeholder="Ask about the constitution, meeting history, or documents..."
-                className="flex-1 text-xs px-4 py-2.5 rounded-xl border border-border bg-white dark:bg-surface text-text focus:outline-none focus:ring-1 focus:ring-primary"
+                placeholder="Ask about leadership, events, sponsors, constitution, or meetings..."
+                disabled={isChatLoading}
+                className="flex-1 text-xs px-4 py-2.5 rounded-xl border border-border bg-white dark:bg-surface text-text focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-60"
               />
               <button 
                 type="submit"
-                className="bg-primary text-white px-4 rounded-xl font-bold hover:bg-primary-dark transition-colors flex items-center justify-center shrink-0"
+                disabled={!chatInput.trim() || isChatLoading}
+                className="bg-primary text-white px-4 rounded-xl font-bold hover:bg-primary-dark transition-colors flex items-center justify-center shrink-0 disabled:opacity-50"
               >
                 <Send size={14} />
               </button>
