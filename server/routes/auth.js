@@ -140,16 +140,16 @@ router.get(
   '/google/callback', 
   (req, res, next) => {
     if (!isGoogleOAuthConfigured) {
-      return res.redirect(`${process.env.CLIENT_URL || 'http://localhost:5173'}/#/login?error=oauth_not_configured`);
+      return res.redirect(`${process.env.CLIENT_URL || 'http://54.80.250.133'}/#/login?error=oauth_not_configured`);
     }
     passport.authenticate('google', { 
       session: false, 
-      failureRedirect: `${process.env.CLIENT_URL || 'http://localhost:5173'}/#/login?error=true` 
+      failureRedirect: `${process.env.CLIENT_URL || 'http://54.80.250.133'}/#/login?error=true` 
     })(req, res, next);
   }, 
   (req, res) => {
     const token = jwt.sign({ id: req.user.id }, JWT_SECRET, { expiresIn: '7d' });
-    res.redirect(`${process.env.CLIENT_URL || 'http://localhost:5173'}/#/dashboard?token=${token}`);
+    res.redirect(`${process.env.CLIENT_URL || 'http://54.80.250.133'}/#/dashboard?token=${token}`);
   }
 );
 

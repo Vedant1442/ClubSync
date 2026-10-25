@@ -22,3 +22,7 @@ server/.env_temp
 # Local Hosting & Tooling
 .netlify
 graphify-out/
+tools/gdrive/client_secret.json
+tools/gdrive/token.json
+__pycache__/
+*.pyc

@@ -45,7 +45,10 @@ app.use(
         origin === allowed || 
         origin.endsWith('.netlify.app') || 
         origin.endsWith('.vercel.app') ||
-        origin.startsWith('http://localhost:')
+        origin.startsWith('http://localhost:') ||
+        origin.startsWith('http://54.80.250.133') ||
+        origin.includes('.amazonaws.com') ||
+        origin.includes('54.80.250.133')
       );
 
       if (isAllowed) {
@@ -173,9 +176,9 @@ app.get('/', (req, res) => {
         <div class="card">
           <div class="badge">● Server Online</div>
           <h1>ClubSync API Server</h1>
-          <p>The Express backend for ClubSync is running smoothly and connected to Neon Postgres. The React frontend is running on port 5173.</p>
+          <p>The Express backend for ClubSync is running smoothly and connected to Neon Postgres.</p>
           <div class="links">
-            <a href="http://localhost:5173" target="_blank">Open App (localhost:5173) &rarr;</a>
+            <a href="${process.env.CLIENT_URL || 'http://54.80.250.133'}" target="_blank">Open ClubSync App &rarr;</a>
             <a class="secondary" href="/api/health">Health Check API</a>
           </div>
         </div>
@@ -188,7 +191,7 @@ app.get('/', (req, res) => {
     name: 'ClubSync API Server',
     status: 'online',
     version: '1.0.0',
-    frontend: 'http://localhost:5173',
+    frontend: process.env.CLIENT_URL || 'http://54.80.250.133',
     healthCheck: '/api/health',
     timestamp: new Date().toISOString()
   });

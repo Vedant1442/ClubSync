@@ -58,8 +58,8 @@ function buildDiscordPayload(eventType, data) {
     fields.push({ name: '⏱️ Timestamp', value: new Date().toLocaleTimeString('en-IN'), inline: true });
   }
 
-  const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
-  const eventUrl = data.id ? `${clientUrl}/events/${data.id}` : clientUrl;
+  const clientUrl = process.env.CLIENT_URL || 'http://54.80.250.133';
+  const eventUrl = data.id ? `${clientUrl}/#/events/${data.id}` : clientUrl;
 
   return {
     username: 'ClubSync Campus Bot',
@@ -91,7 +91,7 @@ function buildTelegramPayload(eventType, data, chatId) {
       `<b>Date:</b> ${new Date(data.date).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}\n` +
       `<b>Fee:</b> ${data.entry_fee > 0 ? '₹' + data.entry_fee : 'FREE'}\n\n` +
       `<i>${(data.description || '').slice(0, 300)}...</i>\n\n` +
-      `🔗 <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}/events/${data.id}">Register on ClubSync</a>`;
+      `🔗 <a href="${process.env.CLIENT_URL || 'http://54.80.250.133'}/#/events/${data.id}">Register on ClubSync</a>`;
   } else if (eventType === 'BROADCAST_SENT') {
     text = `<b>🚨 URGENT BROADCAST NOTICE</b>\n\n` +
       `<b>${data.title || 'Official Update'}</b>\n\n` +
@@ -101,7 +101,7 @@ function buildTelegramPayload(eventType, data, chatId) {
     text = `<b>💼 Club Auditions & Recruitment Open!</b>\n\n` +
       `<b>Drive:</b> ${data.title}\n` +
       `<b>Deadline:</b> ${new Date(data.deadline).toLocaleDateString('en-IN')}\n\n` +
-      `🔗 <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}">Apply via ClubSync Portal</a>`;
+      `🔗 <a href="${process.env.CLIENT_URL || 'http://54.80.250.133'}/#/clubs">Apply via ClubSync Portal</a>`;
   } else if (eventType === 'TEST_DISPATCH') {
     text = `<b>✅ ClubSync Webhook Bridge Verified</b>\n\n` +
       `Connection from PICT ClubSync to Telegram is operational.\n` +

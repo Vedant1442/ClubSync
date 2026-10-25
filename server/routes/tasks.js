@@ -54,7 +54,7 @@ router.post('/', requireAuth, requireOfficer('club_id'), async (req, res) => {
                     <p style="margin: 0; color: #475569;">${description || 'No description'}</p>
                     <p style="margin-top: 10px; margin-bottom: 0; font-size: 14px; color: #64748b;">Due: ${due_date || 'No due date'}</p>
                   </div>
-                  <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}/#/clubs/${club_id}" style="display: inline-block; background-color: #6c5ce7; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px; font-weight: bold;">View in ClubSync</a>
+                  <a href="${process.env.CLIENT_URL || 'http://54.80.250.133'}/#/clubs/${club_id}" style="display: inline-block; background-color: #6c5ce7; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px; font-weight: bold;">View in ClubSync</a>
                 </div>
               `
             });

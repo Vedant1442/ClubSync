@@ -547,7 +547,7 @@ router.post('/:id/meetings', requireAuth, async (req, res) => {
                     <p style="margin: 0; color: #475569;"><strong>Location:</strong> ${location || 'TBD'}</p>
                     <p style="margin-top: 10px; color: #475569;">${description || ''}</p>
                   </div>
-                  <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}/#/clubs/${club_id}" style="display: inline-block; background-color: #6c5ce7; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px; font-weight: bold;">View Details</a>
+                  <a href="${process.env.CLIENT_URL || 'http://54.80.250.133'}/#/clubs/${club_id}" style="display: inline-block; background-color: #6c5ce7; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px; font-weight: bold;">View Details</a>
                 </div>
               `
             });
