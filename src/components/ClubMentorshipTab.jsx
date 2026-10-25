@@ -3,21 +3,66 @@ import {
   GraduationCap, Star, Calendar, Clock, MapPin, Video, 
   CheckCircle2, XCircle, Plus, Search, Filter, MessageSquare, 
   ExternalLink, UserCheck, Sparkles, BookOpen, ChevronRight, 
-  X, Check, AlertCircle, Award, HeartHandshake, ShieldCheck
+  X, Check, AlertCircle, Award, HeartHandshake, ShieldCheck,
+  Terminal, Globe, Cpu, Layers
 } from 'lucide-react'
 import { toast } from 'sonner'
 
 const DOMAIN_OPTIONS = [
-  'Competitive Programming & DSA',
-  'Full-Stack Web Dev (React/Node)',
+  'Competitive Programming / DSA',
+  'Full-Stack Web3',
+  'AI/ML',
+  'ROS2',
   'System Design & Architecture',
-  'AI/ML & Deep Learning',
-  'Robotics, ROS2 & Embedded Systems',
   'Hackathon Ideation & Pitching',
   'Open Source & GitHub Contributions',
   'Cloud & DevOps (Docker/AWS)',
   'Mobile App Dev (Flutter/React Native)'
 ]
+
+const getDomainBadge = (dom = '') => {
+  const lower = dom.toLowerCase()
+  if (lower.includes('competitive') || lower.includes('dsa') || lower.includes('cp')) {
+    return {
+      label: 'Competitive Programming / DSA',
+      badge: 'bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/30',
+      icon: Terminal
+    }
+  }
+  if (lower.includes('web3') || lower.includes('full-stack') || lower.includes('web')) {
+    return {
+      label: 'Full-Stack Web3',
+      badge: 'bg-blue-500/10 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 border-blue-500/30',
+      icon: Globe
+    }
+  }
+  if (lower.includes('ai') || lower.includes('ml') || lower.includes('learning')) {
+    return {
+      label: 'AI/ML',
+      badge: 'bg-purple-500/10 dark:bg-purple-500/20 text-purple-700 dark:text-purple-300 border-purple-500/30',
+      icon: Sparkles
+    }
+  }
+  if (lower.includes('ros2') || lower.includes('robotics') || lower.includes('embedded')) {
+    return {
+      label: 'ROS2',
+      badge: 'bg-amber-500/10 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/30',
+      icon: Cpu
+    }
+  }
+  if (lower.includes('cloud') || lower.includes('devops')) {
+    return {
+      label: 'Cloud & DevOps',
+      badge: 'bg-cyan-500/10 dark:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 border-cyan-500/30',
+      icon: Layers
+    }
+  }
+  return {
+    label: dom,
+    badge: 'bg-surface-dim text-text-secondary border-border',
+    icon: BookOpen
+  }
+}
 
 export default function ClubMentorshipTab({ clubId, currentUser, isOfficer = false }) {
   const [mentors, setMentors] = useState([])
@@ -402,30 +447,53 @@ export default function ClubMentorshipTab({ clubId, currentUser, isOfficer = fal
                     key={m.id}
                     className="p-5 bg-white dark:bg-surface rounded-2xl border border-border hover:border-primary/40 transition-all shadow-sm space-y-4 flex flex-col justify-between group"
                   >
-                    <div className="space-y-3">
-                      {/* Top Header: Avatar & Rating */}
+                    <div className="space-y-3.5">
+                      {/* Top Header: Avatar, TE/BE class badge & 5-Gold-Star Rating */}
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-600 to-primary text-white flex items-center justify-center font-bold text-lg shadow-md">
+                          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-600 to-primary text-white flex items-center justify-center font-bold text-lg shadow-md shrink-0">
                             {m.mentor_name ? m.mentor_name.charAt(0).toUpperCase() : 'M'}
                           </div>
                           <div>
                             <h4 className="text-base font-bold text-text group-hover:text-primary transition-colors">
                               {m.mentor_name}
                             </h4>
-                            <div className="flex items-center gap-1.5 text-[11px] text-text-secondary font-medium">
-                              <span className="font-mono font-semibold text-primary">{m.year_of_study} Student</span>
-                              <span>•</span>
-                              <span>{m.branch || 'PICT Pune'}</span>
+                            <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+                              {/* TE/BE class badge */}
+                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border shadow-xs ${
+                                (m.year_of_study || '').includes('BE')
+                                  ? 'bg-purple-500/15 dark:bg-purple-500/25 text-purple-700 dark:text-purple-300 border-purple-500/30'
+                                  : 'bg-indigo-500/15 dark:bg-indigo-500/25 text-indigo-700 dark:text-indigo-300 border-indigo-500/30'
+                              }`}>
+                                {m.year_of_study || 'TE'} Class
+                              </span>
+                              <span className="text-[11px] text-text-secondary font-medium">
+                                • {m.branch || 'PICT Pune'}
+                              </span>
                             </div>
                           </div>
                         </div>
 
-                        {/* Star Rating Badge */}
-                        <div className="px-2 py-1 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 font-mono font-bold text-xs flex items-center gap-1 shrink-0">
-                          <Star size={12} className="fill-amber-500 text-amber-500" />
-                          <span>{parseFloat(m.rating_avg || 5.0).toFixed(1)}</span>
-                          <span className="text-[10px] text-text-secondary font-normal">({m.sessions_completed || 0})</span>
+                        {/* Star Rating Badge with Gold Stars */}
+                        <div className="flex flex-col items-end gap-1 shrink-0">
+                          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-500/10 dark:bg-amber-500/20 border border-amber-500/30 text-amber-600 dark:text-amber-400 font-mono font-bold text-xs shadow-xs">
+                            <div className="flex items-center text-amber-400">
+                              {[1, 2, 3, 4, 5].map((starIdx) => {
+                                const avg = parseFloat(m.rating_avg || 5.0)
+                                return (
+                                  <Star
+                                    key={starIdx}
+                                    size={11}
+                                    className={starIdx <= Math.round(avg) ? "fill-amber-400 text-amber-400" : "text-amber-400/30"}
+                                  />
+                                )
+                              })}
+                            </div>
+                            <span className="font-black text-amber-600 dark:text-amber-300">{parseFloat(m.rating_avg || 5.0).toFixed(1)}</span>
+                          </div>
+                          <span className="text-[10px] text-text-secondary font-medium font-mono">
+                            {m.sessions_completed || 0} reviews
+                          </span>
                         </div>
                       </div>
 
@@ -439,25 +507,25 @@ export default function ClubMentorshipTab({ clubId, currentUser, isOfficer = fal
                         <span className="text-[10px] font-bold text-text-secondary uppercase tracking-wider block">
                           Mentoring Domains
                         </span>
-                        <div className="flex flex-wrap gap-1">
-                          {domains.slice(0, 3).map((dom, i) => (
-                            <span 
-                              key={i}
-                              className="text-[10px] font-semibold px-2 py-0.5 rounded-lg bg-surface-dim border border-border text-text"
-                            >
-                              {dom}
-                            </span>
-                          ))}
-                          {domains.length > 3 && (
-                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-lg bg-surface-dim border border-border text-text-secondary">
-                              +{domains.length - 3} more
-                            </span>
-                          )}
+                        <div className="flex flex-wrap gap-1.5">
+                          {domains.map((dom, i) => {
+                            const meta = getDomainBadge(dom)
+                            const Icon = meta.icon
+                            return (
+                              <span 
+                                key={i}
+                                className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-lg border ${meta.badge} shadow-2xs`}
+                              >
+                                <Icon size={10} className="shrink-0" />
+                                <span>{meta.label}</span>
+                              </span>
+                            )
+                          })}
                         </div>
                       </div>
                     </div>
 
-                    {/* Bottom Status & Booking CTA */}
+                    {/* Bottom Status & 1-Click Booking CTA */}
                     <div className="pt-3 border-t border-border flex items-center justify-between gap-2">
                       <div className="flex items-center gap-1.5 text-[11px]">
                         <span className={`w-2 h-2 rounded-full ${isAvailable ? 'bg-emerald-500' : 'bg-red-500'}`} />
@@ -472,15 +540,17 @@ export default function ClubMentorshipTab({ clubId, currentUser, isOfficer = fal
                           setSelectedMentor(m)
                           setIsBookModalOpen(true)
                         }}
-                        className={`px-3.5 py-1.5 rounded-xl font-bold text-xs transition-all shadow-sm flex items-center gap-1 ${
+                        className={`px-3.5 py-2 rounded-xl font-bold text-xs transition-all shadow-sm flex items-center gap-1.5 ${
                           isSelf
                             ? 'bg-surface-dim text-text-secondary cursor-not-allowed border border-border'
                             : isAvailable
-                            ? 'bg-primary hover:bg-primary-dark text-white hover:scale-[1.02]'
+                            ? 'bg-primary hover:bg-primary-dark text-white hover:scale-[1.02] hover:shadow-md hover:-translate-y-0.5 active:translate-y-0'
                             : 'bg-surface-dim text-text-secondary cursor-not-allowed border border-border'
                         }`}
+                        title="Book 1-on-1 office hour session with senior mentor"
                       >
-                        <span>{isSelf ? 'Your Profile' : 'Book Session'}</span>
+                        <Clock size={13} />
+                        <span>{isSelf ? 'Your Profile' : 'Book 1-on-1 Office Hour'}</span>
                         {!isSelf && isAvailable && <ChevronRight size={13} />}
                       </button>
                     </div>
@@ -643,10 +713,10 @@ export default function ClubMentorshipTab({ clubId, currentUser, isOfficer = fal
               <div>
                 <h3 className="text-lg font-bold text-text flex items-center gap-2">
                   <HeartHandshake className="text-primary" size={20} />
-                  Book Mentorship Session
+                  Book 1-on-1 Office Hour
                 </h3>
                 <p className="text-xs text-text-secondary mt-0.5">
-                  Request 1-on-1 guidance with <strong>{selectedMentor.mentor_name}</strong> ({selectedMentor.year_of_study}).
+                  Request 1-on-1 technical guidance with <strong>{selectedMentor.mentor_name}</strong> ({selectedMentor.year_of_study} Class).
                 </p>
               </div>
               <button
@@ -717,20 +787,75 @@ export default function ClubMentorshipTab({ clubId, currentUser, isOfficer = fal
                 </div>
               </div>
 
-              <div>
-                <label className="text-xs font-semibold text-text-secondary block mb-1">
-                  Meeting Venue / Mode
+              {/* CLEAR CAMPUS VENUE / GOOGLE MEET SELECTOR */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-text flex items-center justify-between">
+                  <span>Meeting Venue & Discussion Mode *</span>
+                  <span className="text-[11px] font-normal text-text-secondary">Campus or Virtual</span>
                 </label>
-                <select
-                  value={bookForm.meeting_venue}
-                  onChange={(e) => setBookForm({ ...bookForm, meeting_venue: e.target.value })}
-                  className="w-full py-2 px-3 rounded-xl bg-surface-dim border border-border text-xs text-text focus:outline-none focus:border-primary font-medium"
-                >
-                  <option value="PICT Central Reading Hall">PICT Central Reading Hall</option>
-                  <option value="Computer Center Lab CC-2 / CC-3">Computer Center Lab CC-2 / CC-3</option>
-                  <option value="F-Building Foyer Study Desks">F-Building Foyer Study Desks</option>
-                  <option value="Online via Google Meet / Zoom">Online via Google Meet / Zoom</option>
-                </select>
+
+                {/* 2-Option Mode Segment: Campus In-Person vs Google Meet */}
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setBookForm({ ...bookForm, meeting_venue: 'PICT Central Reading Hall' })}
+                    className={`p-3 rounded-xl border text-left transition-all flex items-start gap-2.5 ${
+                      !bookForm.meeting_venue.includes('Google Meet') && !bookForm.meeting_venue.includes('Online')
+                        ? 'bg-primary/10 dark:bg-primary/20 border-primary text-text ring-1 ring-primary/40'
+                        : 'bg-surface-dim border-border text-text-secondary hover:bg-surface-muted'
+                    }`}
+                  >
+                    <div className="p-1.5 rounded-lg bg-surface border border-border text-primary shrink-0">
+                      <MapPin size={16} />
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-text">Campus In-Person</div>
+                      <div className="text-[10px] text-text-secondary mt-0.5">PICT Reading Hall or Labs</div>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setBookForm({ ...bookForm, meeting_venue: 'Online via Google Meet' })}
+                    className={`p-3 rounded-xl border text-left transition-all flex items-start gap-2.5 ${
+                      bookForm.meeting_venue.includes('Google Meet') || bookForm.meeting_venue.includes('Online')
+                        ? 'bg-primary/10 dark:bg-primary/20 border-primary text-text ring-1 ring-primary/40'
+                        : 'bg-surface-dim border-border text-text-secondary hover:bg-surface-muted'
+                    }`}
+                  >
+                    <div className="p-1.5 rounded-lg bg-surface border border-border text-emerald-500 shrink-0">
+                      <Video size={16} />
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-text">Google Meet</div>
+                      <div className="text-[10px] text-text-secondary mt-0.5">Direct video room link</div>
+                    </div>
+                  </button>
+                </div>
+
+                {/* Specific Venue Selection dropdown if In-Person */}
+                {!bookForm.meeting_venue.includes('Google Meet') && !bookForm.meeting_venue.includes('Online') ? (
+                  <div className="space-y-1 pt-1">
+                    <label className="text-[11px] font-semibold text-text-secondary block">
+                      Designated Campus Spot
+                    </label>
+                    <select
+                      value={bookForm.meeting_venue}
+                      onChange={(e) => setBookForm({ ...bookForm, meeting_venue: e.target.value })}
+                      className="w-full py-2 px-3 rounded-xl bg-surface-dim border border-border text-xs text-text focus:outline-none focus:border-primary font-medium"
+                    >
+                      <option value="PICT Central Reading Hall">PICT Central Reading Hall (Ground Floor Reference Area)</option>
+                      <option value="Computer Center Lab CC-2 / CC-3">Computer Center Lab CC-2 / CC-3 (Coding Stations)</option>
+                      <option value="F-Building Foyer Study Desks">F-Building Foyer Study Desks</option>
+                      <option value="Department Seminar Hall">Department Seminar Hall Lobby</option>
+                    </select>
+                  </div>
+                ) : (
+                  <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/25 flex items-center gap-2 text-xs text-emerald-700 dark:text-emerald-300">
+                    <Video size={14} className="shrink-0" />
+                    <span>A 1-click Google Meet room will be generated and emailed once {selectedMentor.mentor_name} confirms!</span>
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-2">

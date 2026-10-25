@@ -16,11 +16,31 @@ const STAGES = [
 ]
 
 const TIERS = {
-  TITLE: { label: 'Title Sponsor', badge: 'bg-gradient-to-r from-amber-500 to-yellow-600 text-white shadow-sm' },
-  POWERED_BY: { label: 'Powered By', badge: 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-sm' },
-  ASSOCIATE: { label: 'Associate Sponsor', badge: 'bg-blue-600 text-white' },
-  IN_KIND: { label: 'In-Kind / Product', badge: 'bg-emerald-600 text-white' },
-  GOODIES_PARTNER: { label: 'Goodies Partner', badge: 'bg-pink-600 text-white' }
+  TITLE: { 
+    label: 'Title Sponsor', 
+    badge: 'bg-amber-500/15 dark:bg-amber-500/25 text-amber-800 dark:text-amber-300 border border-amber-500/40 font-black shadow-xs',
+    accent: 'border-l-4 border-l-amber-500'
+  },
+  POWERED_BY: { 
+    label: 'Powered By', 
+    badge: 'bg-indigo-500/15 dark:bg-indigo-500/25 text-indigo-800 dark:text-indigo-300 border border-indigo-500/40 font-black shadow-xs',
+    accent: 'border-l-4 border-l-indigo-500'
+  },
+  ASSOCIATE: { 
+    label: 'Associate Sponsor', 
+    badge: 'bg-cyan-500/15 dark:bg-cyan-500/25 text-cyan-800 dark:text-cyan-300 border border-cyan-500/40 font-bold shadow-xs',
+    accent: 'border-l-4 border-l-cyan-500'
+  },
+  IN_KIND: { 
+    label: 'In-Kind / Product', 
+    badge: 'bg-emerald-500/15 dark:bg-emerald-500/25 text-emerald-800 dark:text-emerald-300 border border-emerald-500/40 font-bold shadow-xs',
+    accent: 'border-l-4 border-l-emerald-500'
+  },
+  GOODIES_PARTNER: { 
+    label: 'Goodies Partner', 
+    badge: 'bg-rose-500/15 dark:bg-rose-500/25 text-rose-800 dark:text-rose-300 border border-rose-500/40 font-bold shadow-xs',
+    accent: 'border-l-4 border-l-rose-500'
+  }
 }
 
 const DEFAULT_DELIVERABLES_BY_TIER = {
@@ -258,40 +278,62 @@ export default function ClubSponsorshipTab({ clubId, clubEvents = [], isOfficer 
     }
   }
 
-  // Export CSV Dossier
+  // Export CSV Dossier for Gymkhana Audit
   const handleExportCSV = () => {
     if (deals.length === 0) {
-      toast.error('No sponsorship deals to export')
+      toast.error('No sponsorship deals found to export for Gymkhana audit.')
       return
     }
 
-    const headers = ['Company Name', 'Tier', 'Stage', 'Amount (INR)', 'Target Event', 'Contact Person', 'Email', 'Phone', 'Deliverables Fulfilled', 'Notes']
-    const rows = deals.map(d => {
+    const headers = [
+      'Gymkhana Reference ID',
+      'Corporate Partner / Company',
+      'Sponsorship Tier',
+      'Pipeline Status / MoU Stage',
+      'Committed Amount (INR)',
+      'Designated Event / Symposium',
+      'Primary Corporate Contact',
+      'Contact Email',
+      'Contact Phone',
+      'Deliverables Executed',
+      'Completion %',
+      'Internal Audit Notes'
+    ]
+
+    const rows = deals.map((d, index) => {
       const deliverables = Array.isArray(d.deliverables) ? d.deliverables : []
       const doneCount = deliverables.filter(x => x.completed).length
+      const pct = deliverables.length > 0 ? Math.round((doneCount / deliverables.length) * 100) : 0
       return [
-        `"${d.company_name || ''}"`,
+        `"GYM-SPON-${String(index + 1).padStart(4, '0')}"`,
+        `"${(d.company_name || '').replace(/"/g, '""')}"`,
         `"${TIERS[d.tier]?.label || d.tier}"`,
         `"${STAGES.find(s => s.id === d.stage)?.label || d.stage}"`,
-        d.committed_amount || 0,
-        `"${d.event_title || 'General Club Sponsorship'}"`,
-        `"${d.contact_person || ''}"`,
-        `"${d.contact_email || ''}"`,
-        `"${d.contact_phone || ''}"`,
-        `"${doneCount}/${deliverables.length}"`,
+        (parseFloat(d.committed_amount) || 0).toFixed(2),
+        `"${(d.event_title || 'General Student Activity Grant').replace(/"/g, '""')}"`,
+        `"${(d.contact_person || 'N/A').replace(/"/g, '""')}"`,
+        `"${(d.contact_email || 'N/A').replace(/"/g, '""')}"`,
+        `"${(d.contact_phone || 'N/A').replace(/"/g, '""')}"`,
+        `"${doneCount} / ${deliverables.length}"`,
+        `"${pct}%"`,
         `"${(d.notes || '').replace(/"/g, '""')}"`
       ]
     })
 
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n')
+    let csvContent = 'data:text/csv;charset=utf-8,'
+    csvContent += 'PUNE INSTITUTE OF COMPUTER TECHNOLOGY (PICT) - GYMKHANA AUDIT REPORT\n'
+    csvContent += `OFFICIAL CORPORATE SPONSORSHIP & MoU RECONCILIATION DOSSIER - FY 2025-26\n`
+    csvContent += `Generated on: ${new Date().toLocaleDateString('en-IN')} ${new Date().toLocaleTimeString('en-IN')}\n\n`
+    csvContent += [headers.join(','), ...rows.map(e => e.join(','))].join('\n')
+
     const encodedUri = encodeURI(csvContent)
     const link = document.createElement('a')
     link.setAttribute('href', encodedUri)
-    link.setAttribute('download', `ClubSync_Sponsorship_Dossier_${new Date().toISOString().slice(0, 10)}.csv`)
+    link.setAttribute('download', `PICT_Gymkhana_Sponsorship_Audit_${new Date().toISOString().slice(0, 10)}.csv`)
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
-    toast.success('Sponsorship CSV exported!')
+    toast.success('1-Click Gymkhana Audit Export generated successfully!')
   }
 
   // Filtered deals
@@ -327,10 +369,11 @@ export default function ClubSponsorshipTab({ clubId, clubEvents = [], isOfficer 
         <div className="flex items-center gap-2.5 shrink-0">
           <button
             onClick={handleExportCSV}
-            className="px-3.5 py-2 rounded-xl border border-border hover:bg-surface-muted text-xs font-semibold text-text flex items-center gap-1.5 transition-colors shadow-sm"
+            className="px-4 py-2.5 rounded-xl border border-border hover:border-primary/40 bg-white dark:bg-surface hover:bg-surface-muted dark:hover:bg-surface-dim text-xs font-bold text-text flex items-center gap-2 transition-all duration-200 shadow-sm hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 group"
+            title="Download Official PICT Gymkhana Sponsorship Audit CSV"
           >
-            <Download size={14} />
-            <span>Export CSV</span>
+            <Download size={15} className="text-primary group-hover:scale-110 transition-transform" />
+            <span>1-Click Gymkhana Audit Export (CSV)</span>
           </button>
 
           {isOfficer && (
@@ -500,16 +543,15 @@ export default function ClubSponsorshipTab({ clubId, clubEvents = [], isOfficer 
                 className="bg-surface-dim/60 dark:bg-surface/40 rounded-2xl border border-border p-3 space-y-3 flex flex-col min-h-[450px]"
               >
                 {/* Column Header */}
-                <div className="flex items-center justify-between pb-2 border-b border-border">
-                  <div className="flex items-center gap-1.5">
+                <div className="flex items-center justify-between pb-2.5 border-b border-border">
+                  <div className="flex items-center gap-1.5 min-w-0">
                     <StageIcon size={14} className={stage.color.split(' ')[0]} />
-                    <span className="text-xs font-bold text-text">{stage.label}</span>
-                    <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-surface border border-border font-bold text-text-secondary">
-                      {stageDeals.length}
+                    <span className="text-xs font-black uppercase text-text tracking-wide truncate">
+                      {stage.id.replace('_', ' ')} ({stageDeals.length})
                     </span>
                   </div>
-                  <span className="text-[11px] font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                    ₹{stageTotal.toLocaleString('en-IN')}
+                  <span className="text-[11px] font-mono font-extrabold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 dark:bg-emerald-500/20 px-2 py-0.5 rounded-full border border-emerald-500/25 shrink-0">
+                    · ₹{stageTotal.toLocaleString('en-IN')}
                   </span>
                 </div>
 
@@ -530,7 +572,7 @@ export default function ClubSponsorshipTab({ clubId, clubEvents = [], isOfficer 
                       return (
                         <div
                           key={deal.id}
-                          className="p-3.5 bg-white dark:bg-surface rounded-xl border border-border hover:border-primary/40 transition-all shadow-sm space-y-2.5 cursor-pointer group"
+                          className={`p-3.5 bg-white dark:bg-surface rounded-xl border border-border hover:border-primary/40 transition-all shadow-sm space-y-2.5 cursor-pointer group ${tierBadge.accent || ''}`}
                           onClick={() => setSelectedDeal(deal)}
                         >
                           {/* Top: Tier badge & Amount */}
@@ -784,13 +826,29 @@ export default function ClubSponsorshipTab({ clubId, clubEvents = [], isOfficer 
                     Agreed Deliverables Checklist
                   </h4>
                   <p className="text-[11px] text-text-secondary mt-0.5">
-                    Click items to toggle completion as event day milestones are executed.
+                    Click anywhere on an item or toggle the checkbox to record fulfillment.
                   </p>
                 </div>
-                <span className="text-xs font-mono font-bold text-primary px-2 py-0.5 rounded-full bg-primary/10">
-                  {(selectedDeal.deliverables || []).filter(x => x.completed).length} / {(selectedDeal.deliverables || []).length}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+                    {(selectedDeal.deliverables || []).filter(x => x.completed).length} / {(selectedDeal.deliverables || []).length} Fulfilled
+                  </span>
+                </div>
               </div>
+
+              {/* Progress track */}
+              {Array.isArray(selectedDeal.deliverables) && selectedDeal.deliverables.length > 0 && (
+                <div className="w-full bg-surface-dim rounded-full h-2 overflow-hidden border border-border/60">
+                  <div
+                    className="bg-emerald-500 h-full transition-all duration-300"
+                    style={{
+                      width: `${Math.round(
+                        (selectedDeal.deliverables.filter(x => x.completed).length / selectedDeal.deliverables.length) * 100
+                      )}%`
+                    }}
+                  />
+                </div>
+              )}
 
               {/* Items List */}
               <div className="space-y-2">
@@ -798,21 +856,35 @@ export default function ClubSponsorshipTab({ clubId, clubEvents = [], isOfficer 
                   <div
                     key={idx}
                     onClick={() => handleToggleDeliverable(selectedDeal.id, idx)}
-                    className={`flex items-start gap-3 p-3 rounded-xl border transition-all cursor-pointer ${
+                    className={`flex items-start gap-3 p-3.5 rounded-xl border transition-all cursor-pointer group select-none ${
                       item.completed 
-                        ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-950 dark:text-emerald-200' 
-                        : 'bg-surface-dim hover:bg-surface-muted border-border text-text'
+                        ? 'bg-emerald-500/10 dark:bg-emerald-500/15 border-emerald-500/30' 
+                        : 'bg-surface-dim hover:bg-surface-muted border-border hover:border-primary/40'
                     }`}
                   >
-                    <div className="mt-0.5 shrink-0">
-                      {item.completed ? (
-                        <CheckCircle2 size={16} className="text-emerald-600 dark:text-emerald-400" />
-                      ) : (
-                        <Circle size={16} className="text-text-secondary/50" />
-                      )}
+                    <div className="mt-0.5 shrink-0" onClick={(e) => e.stopPropagation()}>
+                      <input
+                        type="checkbox"
+                        checked={Boolean(item.completed)}
+                        onChange={() => handleToggleDeliverable(selectedDeal.id, idx)}
+                        className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-border cursor-pointer accent-emerald-600"
+                      />
                     </div>
-                    <span className={`text-xs flex-1 ${item.completed ? 'line-through opacity-80' : 'font-medium'}`}>
+                    <span 
+                      className={`text-xs flex-1 transition-all ${
+                        item.completed 
+                          ? 'line-through text-text-secondary dark:text-zinc-400 decoration-emerald-500 decoration-2 font-normal' 
+                          : 'font-semibold text-text group-hover:text-primary transition-colors'
+                      }`}
+                    >
                       {item.title}
+                    </span>
+                    <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-md shrink-0 ${
+                      item.completed
+                        ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300'
+                        : 'bg-surface-muted text-text-secondary'
+                    }`}>
+                      {item.completed ? 'Fulfilled' : 'Pending'}
                     </span>
                   </div>
                 ))}

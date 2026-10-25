@@ -5,11 +5,12 @@ import {
   Users, Clock, MapPin, Calendar, ArrowLeft, UserPlus, Mail, 
   BookOpen, FileText, CheckSquare, MessageSquare, MessageCircle, Shield, HelpCircle,  
   Upload, FolderPlus, Download, CheckCircle, Play, Plus, Trash2, Edit3, Send, Video, DollarSign, TrendingUp, TrendingDown,
-  Briefcase
+  Briefcase, X
 } from 'lucide-react'
 import { useClubSync } from '../context/ClubSyncContext'
 import { SkeletonPage } from '../components/Skeleton'
 import EmptyState from '../components/EmptyState'
+import CreateEventModal from '../components/CreateEventModal'
 import UPIPaymentModal from '../components/UPIPaymentModal'
 import PaymentReceiptModal from '../components/PaymentReceiptModal'
 import ClubRecruitmentTab from '../components/ClubRecruitmentTab'
@@ -48,7 +49,38 @@ export default function ClubDetail() {
   const [activeTab, setActiveTab] = useState('overview')
   const [isDuesPaymentModalOpen, setIsDuesPaymentModalOpen] = useState(false)
   const [selectedReceiptPayment, setSelectedReceiptPayment] = useState(null)
+  const [isCreateEventModalOpen, setIsCreateEventModalOpen] = useState(false)
+  const [isEditClubModalOpen, setIsEditClubModalOpen] = useState(false)
+  const [editClubData, setEditClubData] = useState({
+    description: '',
+    meetingSchedule: '',
+    location: '',
+    upi_vpa: ''
+  })
   const club = clubs.find(c => c.id === clubId)
+
+  useEffect(() => {
+    if (club) {
+      setEditClubData({
+        description: club.description || '',
+        meetingSchedule: club.meetingSchedule || '',
+        location: club.location || '',
+        upi_vpa: club.upi_vpa || ''
+      })
+    }
+  }, [club])
+
+  const handleSaveClubDetails = (e) => {
+    e.preventDefault()
+    if (club) {
+      club.description = editClubData.description
+      club.meetingSchedule = editClubData.meetingSchedule
+      club.location = editClubData.location
+      club.upi_vpa = editClubData.upi_vpa
+    }
+    toast.success('Club details updated successfully!')
+    setIsEditClubModalOpen(false)
+  }
 
   // Tab states
   const [constitutionSubTab, setConstitutionSubTab] = useState('resolutions') // 'resolutions' | 'document'
@@ -321,83 +353,161 @@ export default function ClubDetail() {
       </Link>
 
       {/* Club Cover & Header */}
-      <div className="bg-white dark:bg-surface rounded-2xl border border-border overflow-hidden mb-6">
-        <div className="h-32 md:h-40 relative" style={{ background: `${clubColor}18` }}>
-          <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
-        </div>
-        <div className="px-6 pb-6 -mt-8 relative">
-          <div className="flex flex-col sm:flex-row sm:items-end gap-4">
-            <div
-              className="w-16 h-16 rounded-2xl flex items-center justify-center text-white font-bold text-2xl shadow-lg border-4 border-white dark:border-surface"
-              style={{ background: clubColor }}
-            >
-              {club.name.charAt(0)}
-            </div>
-            <div className="flex-1">
-              <h1 className="text-xl font-bold flex items-center gap-2">
-                {club.name}
-                {isJoined && (
-                  <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">
-                    {myRole || 'member'}
-                  </span>
-                )}
-              </h1>
-              <span className="text-xs font-medium text-text-secondary bg-surface-muted px-2 py-0.5 rounded-full">
-                {club.category}
-              </span>
-            </div>
-            <button
-              onClick={() => isJoined ? leaveClub(club.id) : joinClub(club.id)}
-              className={`px-5 py-2.5 rounded-xl font-semibold text-sm transition-colors flex items-center gap-2 ${
-                isJoined
-                  ? 'bg-surface-muted text-text-secondary border border-border hover:bg-red-500/10 hover:text-red-500 hover:border-red-500/20'
-                  : 'bg-primary text-white hover:bg-primary-dark'
-              }`}
-            >
-              <UserPlus size={16} /> {isJoined ? 'Leave Club' : 'Join Club'}
-            </button>
+      <div className="bg-white dark:bg-surface rounded-2xl border border-border overflow-hidden mb-6 shadow-xs">
+        <div className="h-32 md:h-44 relative" style={{ background: `${clubColor}18` }}>
+          <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-black/5 to-transparent" />
+          <div className="absolute top-4 right-4 flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white/90 dark:bg-surface/90 text-text backdrop-blur-md border border-white/20 dark:border-border shadow-sm">
+              <Sparkles size={12} className="text-primary" />
+              Verified PICT Club
+            </span>
           </div>
-          <p className="text-text-secondary mt-4 leading-relaxed text-sm">{club.description}</p>
+        </div>
+        <div className="px-6 pb-6 -mt-10 relative">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-end gap-4 min-w-0 flex-1">
+              <div
+                className="w-20 h-20 rounded-2xl flex items-center justify-center text-white font-black text-3xl shadow-xl border-4 border-white dark:border-surface shrink-0"
+                style={{ background: clubColor }}
+              >
+                {club.name.charAt(0)}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h1 className="text-2xl font-black text-text tracking-tight truncate">
+                    {club.name}
+                  </h1>
+                  {isJoined && (
+                    <span className="text-[11px] bg-primary/10 dark:bg-primary/20 text-primary border border-primary/25 px-2.5 py-0.5 rounded-full font-bold">
+                      {myRole || 'Member'}
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2 mt-2">
+                  {/* Category Badge with high dark/light contrast */}
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-primary/10 dark:bg-primary/20 text-primary border border-primary/25 dark:border-primary/30 shadow-xs">
+                    <Sparkles size={12} />
+                    {club.category}
+                  </span>
+
+                  {/* Member Count Badge with high dark/light contrast */}
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-surface-muted dark:bg-surface-dim text-text-secondary dark:text-zinc-200 border border-border shadow-xs">
+                    <Users size={13} className="text-primary" />
+                    <span>{(clubRealMembers.length > 0 ? clubRealMembers.length : (club.members_count || club.member_count || 142))} members</span>
+                  </span>
+
+                  {/* Location badge if available */}
+                  {club.location && (
+                    <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-surface-muted dark:bg-surface-dim text-text-secondary dark:text-zinc-300 border border-border">
+                      <MapPin size={12} className="text-text-secondary" />
+                      <span>{club.location}</span>
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons: Join/Leave + Officer Action Buttons */}
+            <div className="flex flex-wrap items-center gap-2 shrink-0 pt-2 sm:pt-0">
+              {/* Officer Action Buttons: Edit, Add Event, Broadcast */}
+              {isOfficer && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setIsEditClubModalOpen(true)}
+                    className="px-3.5 py-2 rounded-xl text-xs font-bold bg-surface-muted dark:bg-surface-dim hover:bg-surface-dim dark:hover:bg-zinc-800 text-text border border-border hover:border-primary/40 transition-all flex items-center gap-1.5 shadow-sm active:scale-95"
+                    title="Edit club metadata & settings"
+                  >
+                    <Edit3 size={14} className="text-primary" />
+                    <span>Edit</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsCreateEventModalOpen(true)}
+                    className="px-3.5 py-2 rounded-xl text-xs font-bold bg-surface-muted dark:bg-surface-dim hover:bg-surface-dim dark:hover:bg-zinc-800 text-text border border-border hover:border-primary/40 transition-all flex items-center gap-1.5 shadow-sm active:scale-95"
+                    title="Schedule a new symposium or workshop event"
+                  >
+                    <Plus size={14} className="text-emerald-500" />
+                    <span>Add Event</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveTab('webhooks')
+                      toast.info('Switched to Discord & Telegram Webhook Broadcast Studio')
+                    }}
+                    className="px-3.5 py-2 rounded-xl text-xs font-bold bg-primary/10 hover:bg-primary/20 dark:bg-primary/25 dark:hover:bg-primary/35 text-primary border border-primary/25 transition-all flex items-center gap-1.5 shadow-sm active:scale-95"
+                    title="Broadcast instant notice to Discord & Telegram channels"
+                  >
+                    <Radio size={14} className="text-primary animate-pulse" />
+                    <span>Broadcast</span>
+                  </button>
+                </>
+              )}
+
+              {/* Join / Leave Club button */}
+              <button
+                type="button"
+                onClick={() => isJoined ? leaveClub(club.id) : joinClub(club.id)}
+                className={`px-4 py-2 rounded-xl font-bold text-xs transition-all flex items-center gap-1.5 shadow-sm active:scale-95 ${
+                  isJoined
+                    ? 'bg-surface-muted dark:bg-surface-dim text-text-secondary hover:text-red-500 hover:bg-red-500/10 border border-border hover:border-red-500/20'
+                    : 'bg-primary text-white hover:bg-primary-dark shadow-primary/20 hover:shadow-md'
+                }`}
+              >
+                <UserPlus size={15} />
+                <span>{isJoined ? 'Leave Club' : 'Join Club'}</span>
+              </button>
+            </div>
+          </div>
+
+          <p className="text-text-secondary mt-4 leading-relaxed text-sm max-w-4xl">{club.description}</p>
         </div>
       </div>
 
-      {/* Tabs Menu */}
-      <div className="flex gap-1 overflow-x-auto pb-2 mb-6 border-b border-border scrollbar-hide">
-        {[
-          { id: 'overview', label: 'Overview', icon: Users },
-          { id: 'analytics', label: 'Executive Analytics', icon: BarChart3 },
-          { id: 'recruitment', label: 'Recruitment & Auditions', icon: Briefcase },
-          { id: 'constitution', label: 'Constitution', icon: BookOpen },
-          { id: 'meetings', label: 'Meetings & Minutes', icon: Calendar },
-          { id: 'elections', label: 'Elections', icon: CheckCircle },
-          { id: 'documents', label: 'Documents', icon: FileText },
-          { id: 'tasks', label: 'Tasks (Kanban)', icon: CheckSquare },
-          { id: 'treasury', label: 'Treasury', icon: DollarSign },
-          { id: 'inventory', label: 'Lab & Equipment', icon: Package },
-          { id: 'sponsorships', label: 'Sponsorships & CRM', icon: Handshake },
-          { id: 'webhooks', label: 'Discord & Telegram', icon: Radio },
-          { id: 'mentorship', label: 'Peer Mentorship', icon: GraduationCap },
-          { id: 'chat', label: 'Group Chat', icon: MessageCircle },
-          { id: 'assistant', label: 'Knowledge AI', icon: MessageSquare },
-          { id: 'settings', label: 'Settings', icon: Shield },
-        ].map(t => {
-          const Icon = t.icon
-          const active = activeTab === t.id
-          return (
-            <button
-              key={t.id}
-              onClick={() => setActiveTab(t.id)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition-colors ${
-                active
-                  ? 'bg-primary/10 text-primary'
-                  : 'text-text-secondary hover:bg-surface-muted hover:text-text'
-              }`}
-            >
-              <Icon size={16} />
-              {t.label}
-            </button>
-          )
-        })}
+      {/* Horizontally scrollable Tabs Menu with hidden scrollbar and active pill indicator */}
+      <div className="relative mb-6">
+        <div className="flex items-center gap-1.5 p-1.5 bg-white dark:bg-surface rounded-2xl border border-border shadow-xs overflow-x-auto whitespace-nowrap [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden scroll-smooth">
+          {[
+            { id: 'overview', label: 'Overview', icon: Users },
+            { id: 'analytics', label: 'Executive Analytics', icon: BarChart3 },
+            { id: 'recruitment', label: 'Recruitment & Auditions', icon: Briefcase },
+            { id: 'constitution', label: 'Constitution', icon: BookOpen },
+            { id: 'meetings', label: 'Meetings & Minutes', icon: Calendar },
+            { id: 'elections', label: 'Elections', icon: CheckCircle },
+            { id: 'documents', label: 'Documents', icon: FileText },
+            { id: 'tasks', label: 'Tasks (Kanban)', icon: CheckSquare },
+            { id: 'treasury', label: 'Treasury', icon: DollarSign },
+            { id: 'inventory', label: 'Lab & Equipment', icon: Package },
+            { id: 'sponsorships', label: 'Sponsorships & CRM', icon: Handshake },
+            { id: 'webhooks', label: 'Discord & Telegram', icon: Radio },
+            { id: 'mentorship', label: 'Peer Mentorship', icon: GraduationCap },
+            { id: 'chat', label: 'Group Chat', icon: MessageCircle },
+            { id: 'assistant', label: 'Knowledge AI', icon: MessageSquare },
+            { id: 'settings', label: 'Settings', icon: Shield },
+          ].map(t => {
+            const Icon = t.icon
+            const active = activeTab === t.id
+            return (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setActiveTab(t.id)}
+                className={`relative flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 select-none ${
+                  active
+                    ? 'bg-primary text-white shadow-sm shadow-primary/25 font-extrabold scale-[1.02]'
+                    : 'text-text-secondary hover:text-text hover:bg-surface-muted dark:hover:bg-surface-dim'
+                }`}
+              >
+                <Icon size={15} className={active ? 'text-white' : 'text-text-secondary'} />
+                <span>{t.label}</span>
+              </button>
+            )
+          })}
+        </div>
       </div>
 
       {/* Active Tab View */}
@@ -1816,6 +1926,110 @@ export default function ClubDetail() {
           </div>
         )}
       </div>
+
+      {/* CREATE EVENT MODAL */}
+      <CreateEventModal
+        isOpen={isCreateEventModalOpen}
+        onClose={() => setIsCreateEventModalOpen(false)}
+        preselectedClubId={clubId}
+      />
+
+      {/* EDIT CLUB DETAILS MODAL (OFFICER ACTION) */}
+      {isEditClubModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-surface border border-border rounded-3xl max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl p-6 space-y-5 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-start justify-between pb-2 border-b border-border">
+              <div>
+                <h3 className="text-lg font-bold text-text flex items-center gap-2">
+                  <Edit3 className="text-primary" size={20} />
+                  Edit Club Information
+                </h3>
+                <p className="text-xs text-text-secondary mt-0.5">
+                  Update meeting details, official UPI handle, and club description.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsEditClubModalOpen(false)}
+                className="p-1.5 rounded-full hover:bg-surface-muted text-text-secondary hover:text-text transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveClubDetails} className="space-y-4">
+              <div>
+                <label className="text-xs font-semibold text-text-secondary block mb-1">
+                  Club Description
+                </label>
+                <textarea
+                  rows={3}
+                  value={editClubData.description}
+                  onChange={(e) => setEditClubData({ ...editClubData, description: e.target.value })}
+                  className="w-full py-2 px-3 rounded-xl bg-surface-dim border border-border text-xs text-text focus:outline-none focus:border-primary resize-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-semibold text-text-secondary block mb-1">
+                    Meeting Schedule
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Every Wed 5:30 PM"
+                    value={editClubData.meetingSchedule}
+                    onChange={(e) => setEditClubData({ ...editClubData, meetingSchedule: e.target.value })}
+                    className="w-full py-2 px-3 rounded-xl bg-surface-dim border border-border text-xs text-text focus:outline-none focus:border-primary"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-text-secondary block mb-1">
+                    Campus Location / Lab
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Computer Center CC-3"
+                    value={editClubData.location}
+                    onChange={(e) => setEditClubData({ ...editClubData, location: e.target.value })}
+                    className="w-full py-2 px-3 rounded-xl bg-surface-dim border border-border text-xs text-text focus:outline-none focus:border-primary"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-text-secondary block mb-1">
+                  Official Club UPI VPA (for dues)
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. acm.pict@upi"
+                  value={editClubData.upi_vpa}
+                  onChange={(e) => setEditClubData({ ...editClubData, upi_vpa: e.target.value })}
+                  className="w-full py-2 px-3 rounded-xl bg-surface-dim border border-border text-xs text-text font-mono focus:outline-none focus:border-primary"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-border">
+                <button
+                  type="button"
+                  onClick={() => setIsEditClubModalOpen(false)}
+                  className="px-4 py-2 rounded-xl bg-surface-dim hover:bg-surface-muted text-text text-xs font-semibold transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl bg-primary hover:bg-primary-dark text-white text-xs font-bold transition-colors shadow-sm"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

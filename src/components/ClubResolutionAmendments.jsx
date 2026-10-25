@@ -293,60 +293,162 @@ export default function ClubResolutionAmendments({ clubId, currentUser, isOffice
                   </div>
                 </div>
 
-                {/* SIDE-BY-SIDE DIFF COMPARISON BOX */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
-                  {/* Current Clause */}
-                  <div className="p-4 rounded-2xl bg-amber-500/5 border border-amber-500/20 space-y-1.5 text-xs">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400 block">
-                      Current Constitutional Text
-                    </span>
-                    <p className="text-text-secondary leading-relaxed font-mono text-[11px]">
-                      {r.existing_text || 'No previous clause specified (New Addition).'}
-                    </p>
+                {/* GITHUB-STYLE CONSTITUTIONAL DIFF VIEWER */}
+                <div className="rounded-2xl border border-border overflow-hidden bg-surface-dim/30 dark:bg-zinc-950/40 shadow-xs">
+                  {/* Diff Toolbar Header */}
+                  <div className="flex items-center justify-between px-4 py-2.5 bg-surface-muted/80 dark:bg-surface/80 border-b border-border text-xs">
+                    <div className="flex items-center gap-2 font-mono">
+                      <FileText size={13} className="text-primary" />
+                      <span className="font-bold text-text">PICT_Constitution.md</span>
+                      <span className="text-text-secondary">•</span>
+                      <span className="text-[11px] font-semibold text-primary">{r.clause_affected}</span>
+                    </div>
+                    <div className="flex items-center gap-2 font-mono text-[11px]">
+                      <span className="text-red-500 font-bold bg-red-500/10 px-2 py-0.5 rounded">-1 old</span>
+                      <span className="text-emerald-500 font-bold bg-emerald-500/10 px-2 py-0.5 rounded">+1 draft</span>
+                    </div>
                   </div>
 
-                  {/* Proposed Amendment */}
-                  <div className="p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/20 space-y-1.5 text-xs">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 block">
-                      Proposed Constitutional Amendment
-                    </span>
-                    <p className="text-text font-medium leading-relaxed font-mono text-[11px]">
-                      {r.proposed_amendment}
-                    </p>
+                  {/* Side-by-Side Diff Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border font-mono text-xs">
+                    {/* Current Clause (Red deletion pane) */}
+                    <div className="bg-red-500/[0.04] dark:bg-red-950/20 flex flex-col justify-between">
+                      <div className="px-3.5 py-1.5 bg-red-500/10 border-b border-red-500/20 text-[10px] font-bold uppercase tracking-wider text-red-700 dark:text-red-400 flex items-center justify-between">
+                        <span className="flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-red-500" />
+                          Current Constitutional Text
+                        </span>
+                        <span className="text-[10px] text-red-600/80 font-normal">Active Law</span>
+                      </div>
+                      <div className="p-4 flex gap-3 text-red-900 dark:text-red-200">
+                        <span className="text-red-500/70 select-none font-bold text-sm shrink-0">−</span>
+                        <div className="leading-relaxed whitespace-pre-line text-[11px] sm:text-xs">
+                          {r.existing_text ? (
+                            <span>{r.existing_text}</span>
+                          ) : (
+                            <span className="italic text-text-secondary/70">No existing clause specified (New Amendment Addition).</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Proposed Amendment (Green addition pane) */}
+                    <div className="bg-emerald-500/[0.04] dark:bg-emerald-950/20 flex flex-col justify-between">
+                      <div className="px-3.5 py-1.5 bg-emerald-500/10 border-b border-emerald-500/20 text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 flex items-center justify-between">
+                        <span className="flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                          Proposed Constitutional Amendment
+                        </span>
+                        <span className="text-[10px] text-emerald-600/80 font-normal">Pending Ratification</span>
+                      </div>
+                      <div className="p-4 flex gap-3 text-emerald-950 dark:text-emerald-200">
+                        <span className="text-emerald-600 select-none font-bold text-sm shrink-0">+</span>
+                        <div className="leading-relaxed whitespace-pre-line text-[11px] sm:text-xs font-semibold">
+                          {r.proposed_amendment}
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
                 {/* Strategic Rationale */}
-                <div className="p-3 bg-surface-dim rounded-2xl border border-border text-xs text-text-secondary leading-relaxed">
-                  <strong className="text-text">Rationale:</strong> {r.rationale}
+                <div className="p-3.5 bg-surface-dim rounded-2xl border border-border text-xs text-text-secondary leading-relaxed">
+                  <strong className="text-text font-bold">Proposer Rationale:</strong> {r.rationale}
                 </div>
 
-                {/* LIVE VOTING GAUGE BAR */}
-                <div className="space-y-2 p-4 bg-surface-dim rounded-2xl border border-border">
-                  <div className="flex items-center justify-between text-xs font-bold">
-                    <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
-                      <ThumbsUp size={14} /> FOR ({r.yes_count} votes • {r.yes_percent}%)
-                    </span>
-                    <span className="flex items-center gap-1.5 text-red-600 dark:text-red-400">
-                      AGAINST ({r.no_count} votes) <ThumbsDown size={14} />
-                    </span>
+                {/* QUORUM & 66.6% SUPERMAJORITY RATIFICATION GAUGE */}
+                <div className="p-4 bg-surface-dim/70 dark:bg-surface/70 rounded-2xl border border-border space-y-4">
+                  {/* Top Quorum & Supermajority Status Summary */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-border/70">
+                    <div className="flex items-center gap-2">
+                      <Scale size={16} className="text-primary" />
+                      <span className="text-xs font-bold text-text uppercase tracking-wider">
+                        Ratification Gauge & Threshold Meter
+                      </span>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                      {/* Quorum Pill */}
+                      <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${
+                        r.quorum_met 
+                          ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30' 
+                          : 'bg-amber-500/10 text-amber-600 border-amber-500/30'
+                      }`}>
+                        Quorum: {r.total_votes} / {r.quorum_required} {r.quorum_met ? '✓ Met' : 'Pending'}
+                      </span>
+
+                      {/* Threshold status pill */}
+                      <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${
+                        r.yes_percent >= 66.6
+                          ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/40'
+                          : 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/40'
+                      }`}>
+                        {r.yes_percent >= 66.6 ? '✓ 66.6% Supermajority Met' : `Need ${(66.6 - r.yes_percent).toFixed(1)}% More YES`}
+                      </span>
+                    </div>
                   </div>
 
-                  {/* Visual Bar */}
-                  <div className="w-full h-3 bg-surface-muted rounded-full overflow-hidden flex border border-border/60">
-                    <div 
-                      className="h-full bg-emerald-500 transition-all duration-300"
-                      style={{ width: `${r.yes_percent}%` }}
-                    />
-                    <div 
-                      className="h-full bg-red-500 transition-all duration-300"
-                      style={{ width: `${100 - r.yes_percent}%` }}
-                    />
+                  {/* Quorum Visual Progress Bar */}
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-[11px] font-mono text-text-secondary">
+                      <span>Quorum Progress ({r.total_votes} ballots cast)</span>
+                      <span>Target: {r.quorum_required} minimum votes</span>
+                    </div>
+                    <div className="w-full h-2 bg-surface-muted rounded-full overflow-hidden border border-border/50">
+                      <div
+                        className="h-full bg-primary transition-all duration-300"
+                        style={{ width: `${Math.min(100, (r.total_votes / (r.quorum_required || 1)) * 100)}%` }}
+                      />
+                    </div>
                   </div>
 
-                  <div className="flex items-center justify-between text-[11px] text-text-secondary font-mono pt-0.5">
-                    <span>Supermajority Bar: 66.6% YES required</span>
-                    <span>Abstentions: {r.abstain_count}</span>
+                  {/* Supermajority 66.6% Visual Gauge */}
+                  <div className="space-y-1.5 pt-1">
+                    <div className="flex items-center justify-between text-xs font-bold">
+                      <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
+                        <ThumbsUp size={14} /> FOR ({r.yes_count} votes • {r.yes_percent}%)
+                      </span>
+                      <span className="flex items-center gap-1.5 text-red-600 dark:text-red-400">
+                        AGAINST ({r.no_count} votes • {(100 - r.yes_percent).toFixed(0)}%) <ThumbsDown size={14} />
+                      </span>
+                    </div>
+
+                    {/* Progress Track with 66.6% Threshold Marker Pin */}
+                    <div className="relative w-full h-4 bg-surface-muted rounded-full overflow-visible border border-border/70 flex shadow-inner">
+                      {/* YES Bar */}
+                      <div 
+                        className="h-full bg-emerald-500 rounded-l-full transition-all duration-500"
+                        style={{ width: `${r.yes_percent}%` }}
+                      />
+                      {/* NO Bar */}
+                      <div 
+                        className="h-full bg-red-500 rounded-r-full transition-all duration-500"
+                        style={{ width: `${100 - r.yes_percent}%` }}
+                      />
+
+                      {/* 66.6% Threshold Pin Line & Flag */}
+                      <div 
+                        className="absolute top-[-3px] bottom-[-3px] w-0.5 bg-amber-400 dark:bg-amber-300 z-10 shadow-md"
+                        style={{ left: '66.666%' }}
+                        title="66.6% Supermajority Threshold"
+                      >
+                        <div className="absolute -top-1.5 -translate-x-1/2 w-2.5 h-2.5 rotate-45 bg-amber-400 dark:bg-amber-300 border border-amber-600" />
+                        <div className="absolute -bottom-1.5 -translate-x-1/2 w-2.5 h-2.5 rotate-45 bg-amber-400 dark:bg-amber-300 border border-amber-600" />
+                      </div>
+                    </div>
+
+                    {/* Gauge Axis & Legend */}
+                    <div className="relative flex items-center justify-between text-[10px] text-text-secondary font-mono pt-1">
+                      <span>0%</span>
+                      <span 
+                        className="absolute font-black text-amber-600 dark:text-amber-400 -translate-x-1/2 bg-surface px-1.5 py-0.2 rounded border border-amber-500/30 shadow-xs"
+                        style={{ left: '66.666%' }}
+                      >
+                        ▲ 66.6% Supermajority Bar
+                      </span>
+                      <span>Abstentions: {r.abstain_count}</span>
+                      <span>100%</span>
+                    </div>
                   </div>
                 </div>
 
