@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 const { requireAuth, requireOfficer, JWT_SECRET, OFFICER_ROLES } = require('../middleware/auth');
+const webhookDispatcher = require('../services/webhookDispatcher');
 
 // Create a new event
 router.post('/', requireAuth, requireOfficer('club_id'), async (req, res) => {
@@ -33,6 +34,11 @@ router.post('/', requireAuth, requireOfficer('club_id'), async (req, res) => {
         req.user.id
       ]
     );
+
+    // Dispatch webhook to Discord/Telegram bridges asynchronously
+    webhookDispatcher.broadcastToClub(rows[0].club_id, 'EVENT_PUBLISHED', rows[0]).catch(err => {
+      console.error('[Webhook Event Dispatch Error]:', err.message);
+    });
 
     res.status(201).json(rows[0]);
   } catch (error) {
@@ -402,6 +408,17 @@ router.post('/:id/broadcasts', requireAuth, async (req, res) => {
         false
       ]);
     }
+
+    // 5. Dispatch webhook to Discord/Telegram bridges asynchronously
+    webhookDispatcher.broadcastToClub(event.club_id, 'BROADCAST_SENT', {
+      title,
+      message,
+      event_title: event.title,
+      sender_name: authorName,
+      priority
+    }).catch(err => {
+      console.error('[Webhook Broadcast Dispatch Error]:', err.message);
+    });
 
     res.status(201).json({ broadcast, notifiedCount: attendees.length });
   } catch (err) {
