@@ -214,64 +214,92 @@ ${context}`,
       }
     }
 
-    // Resilient Fallback: Rule-Based Intelligent Knowledge Engine
+    // Resilient Fallback: Conversational Natural Campus Engine
     if (!answer) {
-      const q = question.toLowerCase();
+      const q = question.toLowerCase().trim();
 
-      if (/president|lead|head|secretary|vice|officer|team|leader|who is|committee|incharge/i.test(q)) {
-        if (members.length > 0) {
-          answer = `👑 **Executive Committee & Leadership for ${club.name}:**\n\n` +
-            members.map(m => `• **${m.full_name}** — *${m.role}*`).join('\n') +
-            `\n\nFeel free to reach out to them on the **Members** tab or via PICT campus channels!`;
+      // Greetings & small talk
+      if (/^(hi|hello|hey|yo|sup|wassup|hola|greetings|morning|afternoon|evening)\b/i.test(q)) {
+        answer = `Hey there! 👋 I'm your student guide for **${club.name}** here at PICT Pune.\n\nI can tell you about who's heading the team, upcoming workshops and hackathons, senior mentors you can pair with, or how to join. What would you like to know?`;
+      } else if (/how are you|how's it going|what are you doing/i.test(q)) {
+        answer = `I'm doing great, thanks for asking! Ready to help you explore everything happening at **${club.name}**. Are you looking to join an event, find a mentor, or learn more about what we do?`;
+      } else if (/who are you|what can you do|what are your capabilities|help/i.test(q)) {
+        answer = `I'm your **${club.name}** knowledge companion! Think of me as a senior student coordinator who knows all the club records inside out.\n\nYou can ask me about:\n• Who the current presidents and officers are\n• Upcoming events, hackathons, and registration details\n• Available senior project mentors and their domains\n• Corporate sponsors and brand outreach\n• Club constitution, by-laws, and voting resolutions`;
+      } else if (/president|lead|head|secretary|vice|officer|team|leader|who is|committee|incharge|running/i.test(q)) {
+        const pres = members.find(m => /president/i.test(m.role) && !/vice/i.test(m.role));
+        const vp = members.find(m => /vice/i.test(m.role));
+        const sec = members.find(m => /secretary/i.test(m.role));
+        const otherOfficers = members.filter(m => m !== pres && m !== vp && m !== sec).slice(0, 4);
+
+        if (pres || vp || members.length > 0) {
+          let leadText = `Here's who's currently leading **${club.name}**:\n\n`;
+          if (pres) leadText += `• **President:** ${pres.full_name}\n`;
+          if (vp) leadText += `• **Vice President:** ${vp.full_name}\n`;
+          if (sec) leadText += `• **Secretary:** ${sec.full_name}\n`;
+          if (otherOfficers.length > 0) {
+            leadText += `• **Core Team:** ${otherOfficers.map(o => `${o.full_name} (*${o.role}*)`).join(', ')}\n`;
+          }
+          leadText += `\nYou can reach out to any of them directly in the **Members** tab or catch them around the campus lab!`;
+          answer = leadText;
         } else {
-          answer = `👑 **Leadership:** ${club.name} is managed by its registered student coordinators at PICT Pune. You can check the complete roster in the **Members** tab.`;
+          answer = `**${club.name}** is actively coordinated by our registered student members at PICT. You can check the live member directory right in the **Members** tab!`;
         }
-      } else if (/event|workshop|hackathon|pulzion|credenz|summit|seminar|session|calendar|date/i.test(q)) {
+      } else if (/event|workshop|hackathon|pulzion|credenz|summit|seminar|session|calendar|date|happening/i.test(q)) {
         if (events.length > 0) {
-          answer = `📅 **Upcoming & Flagship Events for ${club.name}:**\n\n` +
-            events.map(e => `• **${e.title}**\n  - 🗓️ Date: ${new Date(e.date).toLocaleDateString('en-IN')}\n  - 📍 Venue: ${e.location}\n  - 💰 Fee: ${Number(e.price) > 0 ? `₹${e.price}` : 'Free'}\n  - ⚡ AICTE Points: +${e.activity_points || 10} pts`).join('\n\n') +
-            `\n\n👉 You can RSVP and download dynamic QR gate passes in the **Events** tab!`;
+          answer = `We've got some exciting events lined up for **${club.name}**! 🎉\n\n` +
+            events.map(e => (
+              `• **${e.title}**\n` +
+              `  📅 **When:** ${new Date(e.date).toLocaleDateString('en-IN', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}\n` +
+              `  📍 **Where:** ${e.location}\n` +
+              `  💰 **Entry:** ${Number(e.price) > 0 ? `₹${e.price}` : 'Free Entry'}\n` +
+              `  ⚡ **AICTE Points:** +${e.activity_points || 10} Activity Points`
+            )).join('\n\n') +
+            `\n\n👉 Head over to the **Events** tab to RSVP, grab your dynamic QR entry pass, and team up!`;
         } else {
-          answer = `📅 **Events:** There are currently no upcoming events scheduled for ${club.name}. Stay tuned for future announcements!`;
+          answer = `There aren't any events on the schedule for **${club.name}** at this exact moment, but keep an eye on the **Events** tab—new workshops and hackathons get posted regularly!`;
         }
-      } else if (/mentor|guidance|senior|project|domain|advice|alumni/i.test(q)) {
+      } else if (/mentor|guidance|senior|project|domain|advice|alumni|help with project/i.test(q)) {
         if (mentors.length > 0) {
-          answer = `🧑‍🏫 **Senior Mentors Available for Guidance:**\n\n` +
-            mentors.map(m => `• **${m.full_name}** (${m.year_of_study || 'Senior'})\n  - 🎯 Domains: **${Array.isArray(m.domains) ? m.domains.join(', ') : m.domains}**\n  - ⭐ Rating: ${m.rating_avg ? `${m.rating_avg} / 5.0` : '5.0 / 5.0'}`).join('\n\n') +
-            `\n\n💡 You can book a 1-on-1 project pairing slot in the **Mentorship** tab!`;
+          answer = `Looking for senior guidance? We have active project mentors ready to help you out:\n\n` +
+            mentors.map(m => (
+              `• **${m.full_name}** (${m.year_of_study || 'Senior Mentor'})\n` +
+              `  🎯 **Focus Domains:** ${Array.isArray(m.domains) ? m.domains.join(', ') : m.domains}\n` +
+              `  ⭐ **Rating:** ${m.rating_avg ? `${m.rating_avg} / 5.0` : '5.0 / 5.0'}`
+            )).join('\n\n') +
+            `\n\n💡 You can book a 1-on-1 pairing session directly through the **Mentorship** tab!`;
         } else {
-          answer = `🧑‍🏫 **Mentorship:** Peer mentorship pairing will be open soon. Check the **Mentorship** tab for mentor applications.`;
+          answer = `Our senior mentorship pairing hub is being prepped for the current academic session. Feel free to connect with club officers in the meantime!`;
         }
-      } else if (/sponsor|partner|persistent|red bull|brand|money|funding|outreach/i.test(q)) {
+      } else if (/sponsor|partner|persistent|red bull|brand|money|funding|outreach|company/i.test(q)) {
         if (sponsors.length > 0) {
-          answer = `🤝 **Corporate Sponsors & Outreach Partners:**\n\n` +
-            sponsors.map(s => `• **${s.company_name}** — ${s.tier} Tier (${s.stage.replace('_', ' ')} • ₹${Number(s.committed_amount || 0).toLocaleString('en-IN')})`).join('\n') +
-            `\n\n💼 Club officers manage partner deliverables and MOU tracking in the **Sponsorships** CRM tab.`;
+          answer = `Here are the corporate sponsors and brand partners supporting **${club.name}**:\n\n` +
+            sponsors.map(s => `• **${s.company_name}** — ${s.tier} Tier (${s.stage.replace('_', ' ').toLowerCase()} • committed: ₹${Number(s.committed_amount || 0).toLocaleString('en-IN')})`).join('\n') +
+            `\n\nClub officers can track partner deliverables and MOU documentation inside the **Sponsorships** CRM tab.`;
         } else {
-          answer = `🤝 **Sponsorships:** ${club.name} is currently open for brand outreach. Club officers can add partner leads in the **Sponsorships** tab.`;
+          answer = `**${club.name}** is currently open to corporate outreach and sponsorship collaborations for upcoming fests. Reach out to our outreach team in the **Sponsorships** tab!`;
         }
       } else if (/constitution|rule|by-law|law|resolution|amendment|article|policy/i.test(q)) {
         if (constitution) {
-          answer = `📜 **Constitution & Governance for ${club.name}:**\n\n**${constitution.title || 'Official By-Laws'} (Version ${constitution.version})**\n\n${constitution.content.slice(0, 400)}...\n\n🗳️ Amendments require a 66.6% supermajority vote. View live debates in the **Constitution** tab!`;
+          answer = `Here's a look at the official governance for **${club.name}**:\n\n**${constitution.title || 'Society By-Laws'} (Version ${constitution.version})**\n${constitution.content.slice(0, 350)}...\n\n🗳️ To amend any by-law clause, a 66.6% supermajority vote is required. You can see active proposals in the **Constitution** tab!`;
         } else if (resolutions.length > 0) {
-          answer = `🗳️ **Active Resolutions:**\n\n` +
-            resolutions.map(r => `• **${r.title}** (${r.clause_affected || 'General'}) — ${r.status}`).join('\n') +
-            `\n\nVote on proposed amendments in the **Constitution** tab.`;
+          answer = `Here are the current constitutional resolutions on the floor:\n\n` +
+            resolutions.map(r => `• **${r.title}** (${r.clause_affected || 'General Clause'}) — Status: **${r.status}**`).join('\n') +
+            `\n\nCheck out the **Constitution** tab to review the arguments and cast your vote!`;
         } else {
-          answer = `📜 **Constitution:** ${club.name} operates under the standard PICT Gymkhana Society By-Laws. Club officers can upload a formal constitution in the **Constitution** tab.`;
+          answer = `**${club.name}** follows standard PICT Gymkhana Society guidelines. Officers can draft new constitutional amendments and by-laws in the **Constitution** tab.`;
         }
       } else if (/meeting|minutes|mom|summary|discussion|agenda/i.test(q)) {
         if (meetings.length > 0) {
-          answer = `📝 **Recent Meetings & Action Items:**\n\n` +
-            meetings.map(m => `• **${m.title}** (${m.date})\n  ${m.ai_summary || m.minutes || 'Minutes recorded.'}`).join('\n\n') +
-            `\n\nOfficers can log new minutes and join live Jitsi video rooms in the **Meetings** tab!`;
+          answer = `Here are the key takeaways from our recent meetings:\n\n` +
+            meetings.map(m => `• **${m.title}** (${m.date}):\n  ${m.ai_summary || m.minutes || 'Minutes recorded.'}`).join('\n\n') +
+            `\n\nOfficers can log new minutes or join live meeting rooms in the **Meetings** tab!`;
         } else {
-          answer = `📝 **Meetings:** No formal meeting minutes are on file for this club yet.`;
+          answer = `No meeting minutes have been formally published yet for **${club.name}**. Check back soon or ask an officer!`;
         }
-      } else if (/fee|pay|membership|join|upi|vpa|register/i.test(q)) {
-        answer = `💳 **Club Membership & Official UPI:**\n\n- **Host Club:** ${club.name}\n- **Category:** ${club.category}\n- **Official UPI VPA:** \`${club.upi_vpa || 'vedant1442@fam'}\`\n- **Verification:** Fast-lane UTR reconciliation with instant zero-fee digital receipts.\n\nClick **Join Club** at the top of this page to become an active member!`;
+      } else if (/fee|pay|membership|join|upi|vpa|register|how to join/i.test(q)) {
+        answer = `Joining **${club.name}** is easy! 👍\n\n• Just click the **Join Club** button at the very top of this page to join the roster.\n• **Category:** ${club.category}\n• **Official Society UPI:** \`${club.upi_vpa || 'vedant1442@fam'}\` (zero transaction fees with instant 12-digit UTR digital receipts).\n\nOnce you're in, you can take on tasks, participate in elections, and attend members-only sessions!`;
       } else {
-        answer = `🤖 **Welcome to ${club.name} Knowledge Assistant!**\n\n${club.description || 'Welcome to our official PICT student chapter.'}\n\n**Here are a few questions I can answer for you:**\n• *"Who are the club officers and president?"*\n• *"What events and workshops are scheduled?"*\n• *"Who are the senior mentors available?"*\n• *"What corporate sponsors support this club?"*\n• *"Tell me about the constitution and voting resolutions."*`;
+        answer = `Hey! I'm your **${club.name}** campus assistant. ${club.description ? `\n\n*${club.description}*\n` : ''}\nFeel free to ask me questions like:\n• *"Who's leading the club?"*\n• *"What hackathons or events are coming up?"*\n• *"How can I get a senior mentor?"*\n• *"Who are your sponsors?"*\n• *"How do I join?"*`;
       }
     }
 
