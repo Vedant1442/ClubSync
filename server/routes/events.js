@@ -144,9 +144,17 @@ router.post('/:id/check-in', requireAuth, async (req, res) => {
 
     // Find attendee record by ticket_code (or user_id fallback)
     const memberRes = await db.query(`
-      SELECT em.*, u.full_name AS user_name, u.email AS user_email
+      SELECT 
+        em.*, 
+        u.full_name AS user_name, 
+        u.email AS user_email,
+        u.college_id,
+        u.branch,
+        et.name AS team_name
       FROM event_members em
       JOIN users u ON em.user_id = u.id
+      LEFT JOIN event_team_members etm ON etm.user_id = u.id AND etm.event_id = em.event_id
+      LEFT JOIN event_teams et ON etm.team_id = et.id
       WHERE em.event_id = $1 AND (em.ticket_code = $2 OR em.user_id::text = $2)
     `, [eventId, cleanCode]);
 
@@ -191,6 +199,106 @@ router.post('/:id/check-in', requireAuth, async (req, res) => {
   } catch (error) {
     console.error('[Check-In Error]:', error);
     res.status(500).json({ error: 'Failed to process check-in' });
+  }
+});
+
+// SPOT WALK-IN DESK REGISTRATION (Officers only)
+router.post('/:id/walk-in', requireAuth, async (req, res) => {
+  try {
+    const eventId = req.params.id;
+    const { full_name, email, college_id, branch } = req.body;
+
+    if (!full_name || !email) {
+      return res.status(400).json({ error: 'Full name and email are required for walk-in registration' });
+    }
+
+    // 1. Verify event and officer permissions
+    const eventRes = await db.query('SELECT club_id, title, date FROM events WHERE id = $1', [eventId]);
+    if (eventRes.rows.length === 0) return res.status(404).json({ error: 'Event not found' });
+    const event = eventRes.rows[0];
+
+    const officerCheck = await db.query(
+      'SELECT role FROM club_members WHERE club_id = $1 AND user_id = $2',
+      [event.club_id, req.user.id]
+    );
+    if (officerCheck.rows.length === 0 || !OFFICER_ROLES.includes(officerCheck.rows[0].role)) {
+      return res.status(403).json({ error: 'Only club officers can register walk-ins' });
+    }
+
+    // 2. Find or create user
+    let user;
+    const existingUser = await db.query('SELECT * FROM users WHERE email = $1', [email.trim().toLowerCase()]);
+    if (existingUser.rows.length > 0) {
+      user = existingUser.rows[0];
+      if (college_id || branch) {
+        await db.query(
+          'UPDATE users SET college_id = COALESCE(college_id, $1), branch = COALESCE(branch, $2) WHERE id = $3',
+          [college_id ? college_id.trim() : null, branch ? branch.trim() : null, user.id]
+        );
+      }
+    } else {
+      const newUser = await db.query(`
+        INSERT INTO users (email, full_name, college_id, branch, created_at)
+        VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)
+        RETURNING *
+      `, [
+        email.trim().toLowerCase(),
+        full_name.trim(),
+        college_id ? college_id.trim() : `PRN-${Math.floor(100000 + Math.random() * 900000)}`,
+        branch ? branch.trim() : 'Engineering'
+      ]);
+      user = newUser.rows[0];
+    }
+
+    // 3. Check if already registered
+    const existingMember = await db.query(
+      'SELECT * FROM event_members WHERE event_id = $1 AND user_id = $2',
+      [eventId, user.id]
+    );
+
+    const ticketCode = `TK-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+    const certId = `CERT-2026-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+    let member;
+
+    if (existingMember.rows.length > 0) {
+      const updateRes = await db.query(`
+        UPDATE event_members
+        SET checked_in = TRUE, checked_in_at = CURRENT_TIMESTAMP,
+            certificate_id = COALESCE(certificate_id, $1),
+            ticket_code = COALESCE(ticket_code, $2)
+        WHERE id = $3
+        RETURNING *
+      `, [certId, ticketCode, existingMember.rows[0].id]);
+      member = updateRes.rows[0];
+    } else {
+      const insertRes = await db.query(`
+        INSERT INTO event_members (event_id, user_id, status, ticket_code, checked_in, checked_in_at, certificate_id)
+        VALUES ($1, $2, 'registered', $3, TRUE, CURRENT_TIMESTAMP, $4)
+        RETURNING *
+      `, [eventId, user.id, ticketCode, certId]);
+      member = insertRes.rows[0];
+    }
+
+    res.status(201).json({
+      success: true,
+      message: `Walk-in registered & checked in: ${user.full_name}`,
+      attendee: {
+        id: member.id,
+        user_id: user.id,
+        user_name: user.full_name,
+        user_email: user.email,
+        college_id: user.college_id || college_id,
+        branch: user.branch || branch,
+        ticket_code: member.ticket_code,
+        certificate_id: member.certificate_id,
+        checked_in: true,
+        checked_in_at: member.checked_in_at,
+        is_walk_in: true
+      }
+    });
+  } catch (error) {
+    console.error('[Walk-In Registration Error]:', error);
+    res.status(500).json({ error: 'Failed to process spot walk-in' });
   }
 });
 

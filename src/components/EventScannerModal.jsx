@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { X, QrCode, CheckCircle, Search, RefreshCw, Users, AlertCircle, ShieldCheck, Volume2, Sparkles, Download } from 'lucide-react'
+import { X, QrCode, CheckCircle, Search, RefreshCw, Users, AlertCircle, ShieldCheck, Volume2, Sparkles, Download, Printer } from 'lucide-react'
 import { toast } from 'sonner'
 import { useClubSync } from '../context/ClubSyncContext'
 
@@ -25,7 +25,7 @@ function playSuccessBeep() {
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
-export default function EventScannerModal({ isOpen, onClose, event, club }) {
+export default function EventScannerModal({ isOpen, onClose, event, club, onOpenKiosk }) {
   const { refreshData } = useClubSync()
 
   const [ticketInput, setTicketInput] = useState('')
@@ -167,12 +167,28 @@ export default function EventScannerModal({ isOpen, onClose, event, club }) {
             <h3 className="text-xl font-bold mt-0.5 text-white">{event.title}</h3>
             <p className="text-xs text-white/80">{club?.name} • Live Venue Access Control</p>
           </div>
-          <button 
-            onClick={onClose}
-            className="p-1.5 rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors"
-          >
-            <X size={18} />
-          </button>
+          <div className="flex items-center gap-2">
+            {onOpenKiosk && (
+              <button
+                type="button"
+                onClick={() => {
+                  onClose()
+                  onOpenKiosk()
+                }}
+                className="px-2.5 py-1.5 rounded-xl bg-white/20 hover:bg-white/30 text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm"
+                title="Launch Fullscreen Desk Kiosk Mode with Thermal Badge Printer"
+              >
+                <Printer size={13} />
+                <span className="hidden sm:inline">Desk Kiosk Mode</span>
+              </button>
+            )}
+            <button 
+              onClick={onClose}
+              className="p-1.5 rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors"
+            >
+              <X size={18} />
+            </button>
+          </div>
         </div>
 
         {/* Content Body */}

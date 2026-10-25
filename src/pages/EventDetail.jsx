@@ -5,7 +5,7 @@ import {
   ArrowLeft, Calendar, Clock, MapPin, Users, CheckCircle, 
   Share2, IndianRupee, ShieldCheck, Receipt, Sparkles, 
   Ticket, Award, QrCode, MessageCircle, FileSpreadsheet, Download,
-  Megaphone, AlertTriangle, Bot, CalendarPlus, CalendarDays, Navigation
+  Megaphone, AlertTriangle, Bot, CalendarPlus, CalendarDays, Navigation, Printer
 } from 'lucide-react'
 import { useClubSync } from '../context/ClubSyncContext'
 import { SkeletonPage } from '../components/Skeleton'
@@ -14,6 +14,7 @@ import PaymentReceiptModal from '../components/PaymentReceiptModal'
 import EventTicketModal from '../components/EventTicketModal'
 import EventCertificateModal from '../components/EventCertificateModal'
 import EventScannerModal from '../components/EventScannerModal'
+import EventKioskModal from '../components/EventKioskModal'
 import EventBroadcastModal from '../components/EventBroadcastModal'
 import EventODLetterModal from '../components/EventODLetterModal'
 import EventTeamSection from '../components/EventTeamSection'
@@ -33,6 +34,7 @@ export default function EventDetail() {
   const [isODModalOpen, setIsODModalOpen] = useState(false)
   const [isAIModalOpen, setIsAIModalOpen] = useState(false)
   const [isScannerModalOpen, setIsScannerModalOpen] = useState(false)
+  const [isKioskModalOpen, setIsKioskModalOpen] = useState(false)
   const [isBroadcastModalOpen, setIsBroadcastModalOpen] = useState(false)
   const [isVenueModalOpen, setIsVenueModalOpen] = useState(false)
   const [isLiveQAModalOpen, setIsLiveQAModalOpen] = useState(false)
@@ -211,6 +213,14 @@ export default function EventDetail() {
             >
               <FileSpreadsheet size={15} className="text-emerald-600" />
               <span>{exportingAttendees ? 'Exporting...' : 'Export Roster (CSV)'}</span>
+            </button>
+            <button
+              onClick={() => setIsKioskModalOpen(true)}
+              className="px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm transition-all hover:scale-[1.02]"
+              title="Launch Fullscreen Registration Desk Kiosk & Thermal Badge Printer"
+            >
+              <Printer size={15} />
+              <span>Desk Kiosk & Badge Print</span>
             </button>
             <button
               onClick={() => setIsScannerModalOpen(true)}
@@ -582,6 +592,17 @@ export default function EventDetail() {
         <EventScannerModal
           isOpen={isScannerModalOpen}
           onClose={() => setIsScannerModalOpen(false)}
+          event={event}
+          club={club}
+          onOpenKiosk={() => setIsKioskModalOpen(true)}
+        />
+      )}
+
+      {/* Event Day Desk Kiosk & Thermal Badge Printing Modal */}
+      {isOfficer && (
+        <EventKioskModal
+          isOpen={isKioskModalOpen}
+          onClose={() => setIsKioskModalOpen(false)}
           event={event}
           club={club}
         />
