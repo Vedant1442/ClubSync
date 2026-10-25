@@ -17,7 +17,8 @@ import ClubAnalyticsTab from '../components/ClubAnalyticsTab'
 import ClubInventoryTab from '../components/ClubInventoryTab'
 import ClubSponsorshipTab from '../components/ClubSponsorshipTab'
 import ClubWebhookTab from '../components/ClubWebhookTab'
-import { IndianRupee, QrCode, Receipt as ReceiptIcon, Sparkles, ShieldCheck, BarChart3, Package, Handshake, Radio } from 'lucide-react'
+import ClubMentorshipTab from '../components/ClubMentorshipTab'
+import { IndianRupee, QrCode, Receipt as ReceiptIcon, Sparkles, ShieldCheck, BarChart3, Package, Handshake, Radio, HeartHandshake, GraduationCap } from 'lucide-react'
 
 // Generate a deterministic color from a string
 const getClubColor = (name = '') => {
@@ -356,6 +357,7 @@ export default function ClubDetail() {
           { id: 'inventory', label: 'Lab & Equipment', icon: Package },
           { id: 'sponsorships', label: 'Sponsorships & CRM', icon: Handshake },
           { id: 'webhooks', label: 'Discord & Telegram', icon: Radio },
+          { id: 'mentorship', label: 'Peer Mentorship', icon: GraduationCap },
           { id: 'chat', label: 'Group Chat', icon: MessageCircle },
           { id: 'assistant', label: 'Knowledge AI', icon: MessageSquare },
           { id: 'settings', label: 'Settings', icon: Shield },
@@ -1258,6 +1260,11 @@ export default function ClubDetail() {
         {/* DISCORD & TELEGRAM WEBHOOK BRIDGE TAB */}
         {activeTab === 'webhooks' && (
           <ClubWebhookTab clubId={club.id} isOfficer={isOfficer} />
+        )}
+
+        {/* PEER MENTORSHIP & PROJECT PAIRING TAB */}
+        {activeTab === 'mentorship' && (
+          <ClubMentorshipTab clubId={club.id} currentUser={currentUser} isOfficer={isOfficer} />
         )}
 
         {/* TREASURY TAB */}
