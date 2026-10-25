@@ -88,9 +88,26 @@ export default function Landing() {
           All-in-one operations for campus societies.
         </h1>
 
-        <p className="text-sm sm:text-base text-text-secondary max-w-xl mx-auto mb-10 leading-relaxed">
+        <p className="text-sm sm:text-base text-text-secondary max-w-xl mx-auto mb-8 leading-relaxed">
           Replaces scattered Google Forms and spreadsheets with continuous gate check-in kiosks, zero-fee UPI payments, and digital by-law voting.
         </p>
+
+        {/* Primary Call to Action */}
+        <div className="flex items-center justify-center gap-3 mb-10">
+          <Link
+            to="/register"
+            className="bg-primary hover:bg-primary-dark text-white px-5 py-2.5 rounded-lg text-xs sm:text-sm font-semibold transition-colors flex items-center gap-1.5 shadow-xs"
+          >
+            <span>Get Started</span>
+            <ArrowRight size={15} />
+          </Link>
+          <Link
+            to="/login"
+            className="border border-border bg-surface hover:bg-surface-muted text-text px-4 py-2.5 rounded-lg text-xs sm:text-sm font-medium transition-colors"
+          >
+            Sign In
+          </Link>
+        </div>
 
         {/* 1-Click Evaluator Access Box */}
         <div className="border border-border rounded-xl bg-surface p-5 sm:p-6 text-left shadow-xs mb-8">
