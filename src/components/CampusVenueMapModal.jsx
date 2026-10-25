@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { 
   X, 
   MapPin, 
@@ -14,7 +14,8 @@ import {
   Wind, 
   Footprints,
   Sparkles,
-  Building
+  Building,
+  Users
 } from 'lucide-react'
 
 // Authentic PICT Pune campus venue database
@@ -140,6 +141,12 @@ export default function CampusVenueMapModal({ event, club, isOpen, onClose }) {
   const [selectedVenue, setSelectedVenue] = useState(detectedVenue)
   const [copiedDirections, setCopiedDirections] = useState(false)
 
+  useEffect(() => {
+    if (detectedVenue) {
+      setSelectedVenue(detectedVenue)
+    }
+  }, [detectedVenue])
+
   const handleCopyDirections = () => {
     const text = `📍 ${selectedVenue.name} - PICT Pune\n🏢 ${selectedVenue.building} (${selectedVenue.floor})\n🔍 Landmark: ${selectedVenue.landmark}\n\nDirections:\n${selectedVenue.directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}\n\nEvent: ${event?.title || 'ClubSync Event'}`
     navigator.clipboard.writeText(text)
@@ -192,7 +199,7 @@ export default function CampusVenueMapModal({ event, club, isOpen, onClose }) {
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 flex items-center gap-1">
-                <Sparkles size={12} /> Matched: {selectedVenue.name.split('(')[0]}
+                <Sparkles size={12} /> Matched: {selectedVenue?.name ? selectedVenue.name.split('(')[0] : 'Venue'}
               </span>
             </div>
           </div>
@@ -248,8 +255,8 @@ export default function CampusVenueMapModal({ event, club, isOpen, onClose }) {
 
                 {/* Interactive Buildings */}
                 {PICT_VENUES.map(v => {
-                  const isSelected = selectedVenue.id === v.id
-                  const isDetected = detectedVenue.id === v.id
+                  const isSelected = selectedVenue?.id === v.id
+                  const isDetected = detectedVenue?.id === v.id
                   return (
                     <g 
                       key={v.id} 
@@ -307,7 +314,7 @@ export default function CampusVenueMapModal({ event, club, isOpen, onClose }) {
           {/* Quick Switcher Venue Pills */}
           <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
             {PICT_VENUES.map(v => {
-              const isSelected = selectedVenue.id === v.id
+              const isSelected = selectedVenue?.id === v.id
               return (
                 <button
                   key={v.id}
