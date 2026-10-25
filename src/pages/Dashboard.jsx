@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { Calendar, Users, ArrowRight, Clock, MapPin, TrendingUp, CheckSquare, Trophy, Sparkles } from 'lucide-react'
 import { useClubSync } from '../context/ClubSyncContext'
@@ -8,8 +8,42 @@ import { motion } from 'framer-motion'
 const MotionLink = motion.create ? motion.create(Link) : motion(Link)
 import { SkeletonPage } from '../components/Skeleton'
 import EmptyState from '../components/EmptyState'
+
 export default function Dashboard() {
   const { clubs, events, clubMemberships, eventMembers, tasks, meetings = [], documents = [], currentUser, loading } = useClubSync()
+  const [leaderboardClubs, setLeaderboardClubs] = useState(null)
+
+  useEffect(() => {
+    let isMounted = true
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+    fetch(`${API_URL}/api/clubs/leaderboard`)
+      .then(res => res.json())
+      .then(data => {
+        if (isMounted && Array.isArray(data.leaderboard)) {
+          setLeaderboardClubs(data.leaderboard.slice(0, 3))
+        }
+      })
+      .catch(err => console.error('Failed to load leaderboard for dashboard:', err))
+    return () => { isMounted = false }
+  }, [])
+
+  // Resilient fallback so topClubs is always immediately defined
+  const fallbackTopClubs = useMemo(() => {
+    return [...clubs]
+      .map(c => {
+        const clubEvents = events.filter(e => e.club_id === c.id)
+        const rsvpCount = eventMembers.filter(em => clubEvents.some(e => e.id === em.event_id)).length
+        const impactScore = (clubEvents.length * 50) + (rsvpCount * 10) + ((c.members_count || 0) * 5)
+        return {
+          ...c,
+          impactScore: impactScore || 15
+        }
+      })
+      .sort((a, b) => b.impactScore - a.impactScore)
+      .slice(0, 3)
+  }, [clubs, events, eventMembers])
+
+  const topClubs = leaderboardClubs || fallbackTopClubs
 
   if (loading) {
     return <SkeletonPage />
@@ -42,7 +76,7 @@ export default function Dashboard() {
     <div className="max-w-7xl mx-auto px-4 py-8 pb-24 md:pb-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold">Welcome back, {currentUser.name.split(' ')[0]} 👋</h1>
+        <h1 className="text-2xl font-bold">Welcome back, {currentUser?.name ? currentUser.name.split(' ')[0] : 'Member'} 👋</h1>
         <p className="text-text-secondary mt-1">Here's what's happening in your campus.</p>
       </div>
 
