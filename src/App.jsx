@@ -3,6 +3,7 @@ import { Routes, Route } from 'react-router-dom'
 import Navbar from './components/Navbar'
 import ProtectedRoute from './components/ProtectedRoute'
 import { Toaster } from 'sonner'
+import { Agentation } from 'agentation'
 
 // Lazy load pages for code splitting (Performance Optimization)
 const Landing = lazy(() => import('./pages/Landing'))
@@ -45,6 +46,7 @@ export default function App() {
   return (
     <>
       <Toaster position="top-right" richColors />
+      {import.meta.env.DEV && <Agentation appName="ClubSync" />}
       <Suspense fallback={<LoadingFallback />}>
         <Routes>
           <Route path="/" element={<Landing />} />
