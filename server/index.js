@@ -1,3 +1,6 @@
+// Set libuv threadpool size for fast concurrent DNS queries on Windows
+process.env.UV_THREADPOOL_SIZE = process.env.UV_THREADPOOL_SIZE || '16';
+
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');

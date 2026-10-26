@@ -7,33 +7,42 @@ router.get('/', requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
 
+    // Run in controlled batches (5 queries per batch) to prevent connection spikes during Neon cold starts
     const [
       { rows: clubs },
       { rows: events },
       { rows: clubMemberships },
       { rows: eventMembers },
       { rows: constitutions },
-      { rows: meetings },
-      { rows: elections },
-      { rows: candidates },
-      { rows: votes },
-      { rows: documents },
-      { rows: tasks },
-      { rows: notifications },
-      { rows: transactions },
-      { rows: messages },
-      { rows: payments },
     ] = await Promise.all([
       db.query('SELECT * FROM clubs'),
       db.query('SELECT * FROM events'),
       db.query('SELECT * FROM club_members'),
       db.query('SELECT * FROM event_members'),
       db.query('SELECT * FROM constitutions'),
+    ]);
+
+    const [
+      { rows: meetings },
+      { rows: elections },
+      { rows: candidates },
+      { rows: votes },
+      { rows: documents },
+    ] = await Promise.all([
       db.query('SELECT * FROM meetings'),
       db.query('SELECT * FROM elections'),
       db.query('SELECT * FROM election_candidates'),
       db.query('SELECT * FROM election_votes'),
       db.query('SELECT * FROM documents'),
+    ]);
+
+    const [
+      { rows: tasks },
+      { rows: notifications },
+      { rows: transactions },
+      { rows: messages },
+      { rows: payments },
+    ] = await Promise.all([
       db.query('SELECT * FROM tasks'),
       db.query('SELECT * FROM notifications WHERE user_id = $1', [userId]),
       db.query('SELECT * FROM club_transactions'),
