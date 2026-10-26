@@ -8,7 +8,7 @@ import {
   FileSpreadsheet, Download, Megaphone, AlertTriangle, Bot, 
   CalendarPlus, CalendarDays, Navigation, Printer, Search, 
   RefreshCw, CheckCircle2, UserCheck, Radio, ExternalLink, 
-  Filter, Copy, Check, Zap, ChevronRight
+  Filter, Copy, Check, Zap, ChevronRight, ScanBarcode
 } from 'lucide-react'
 import { useClubSync } from '../context/ClubSyncContext'
 import { SkeletonPage } from '../components/Skeleton'
