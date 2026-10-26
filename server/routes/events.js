@@ -363,6 +363,7 @@ router.get('/verify/:id', async (req, res) => {
          OR em.ticket_code = $1
          OR $1 ILIKE '%' || SUBSTRING(em.ticket_code, 1, 8) || '%'
          OR (em.certificate_id IS NOT NULL AND $1 ILIKE '%' || SUBSTRING(em.certificate_id, 1, 10) || '%')
+      ORDER BY (em.certificate_id = $1) DESC, (em.ticket_code = $1) DESC
       LIMIT 1
     `, [credId]);
 
