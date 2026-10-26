@@ -39,7 +39,7 @@ export default function Profile() {
 
   if (!currentUser) return null
 
-  const myClubs = clubs.filter(c => clubMemberships.some(m => String(m.club_id) === String(c.id)))
+  const myClubs = clubs.filter(c => clubMemberships.some(m => String(m.club_id) === String(c.id) && String(m.user_id) === String(currentUser?.id)))
   const myEvents = events.filter(e => eventMembers.some(em => String(em.event_id) === String(e.id) && String(em.user_id) === String(currentUser?.id)))
   
   // Events where user is checked in

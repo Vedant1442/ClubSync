@@ -49,9 +49,9 @@ export default function Dashboard() {
     return <SkeletonPage />
   }
 
-  const myClubs = clubs.filter(c => clubMemberships.some(m => m.club_id === c.id))
-  const upcomingEvents = events.filter(e => eventMembers.some(em => em.event_id === e.id))
-  const myTasks = tasks.filter(t => t.assignee_id === currentUser?.id && t.status !== 'done')
+  const myClubs = clubs.filter(c => clubMemberships.some(m => String(m.club_id) === String(c.id) && String(m.user_id) === String(currentUser?.id)))
+  const upcomingEvents = events.filter(e => eventMembers.some(em => String(em.event_id) === String(e.id) && String(em.user_id) === String(currentUser?.id)))
+  const myTasks = tasks.filter(t => String(t.assignee_id) === String(currentUser?.id) && t.status !== 'done')
 
   // Generate Recent Activity from my clubs
   const myClubIds = myClubs.map(c => c.id)
@@ -157,7 +157,7 @@ export default function Dashboard() {
             </div>
             <div className="space-y-3">
               {myClubs.map(club => {
-                const role = clubMemberships.find(m => m.club_id === club.id)?.role
+                const role = clubMemberships.find(m => String(m.club_id) === String(club.id) && String(m.user_id) === String(currentUser?.id))?.role
                 return (
                   <MotionLink
                     whileHover={{ scale: 1.02 }}

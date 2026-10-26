@@ -24,7 +24,12 @@ const getClubColor = (name) => {
 const MotionLink = motion.create ? motion.create(Link) : motion(Link)
 
 export default function Clubs() {
-  const { createClub } = useClubSync()
+  const { createClub, currentUser, clubMemberships } = useClubSync()
+  const isOfficer = currentUser?.email === 'officer@clubsync.app' || 
+    (clubMemberships && clubMemberships.some(m => 
+      String(m.user_id) === String(currentUser?.id) && 
+      ['President', 'Vice President', 'Secretary', 'Treasurer', 'officer', 'Officer', 'Lead', 'Head'].includes(m.role)
+    ))
   const [searchParams, setSearchParams] = useSearchParams()
   const currentTab = searchParams.get('tab') || 'directory'
   const [search, setSearch] = useState('')
@@ -85,12 +90,14 @@ export default function Clubs() {
           <h1 className="text-2xl font-bold">Campus Clubs & Societies</h1>
           <p className="text-text-secondary mt-1">Explore official PICT student organizations and inter-club leaderboards</p>
         </div>
-        <button
-          onClick={() => setShowCreate(true)}
-          className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-primary-dark transition-colors self-start sm:self-auto"
-        >
-          <Plus size={16} /> Create Club
-        </button>
+        {isOfficer && (
+          <button
+            onClick={() => setShowCreate(true)}
+            className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-primary-dark transition-colors self-start sm:self-auto"
+          >
+            <Plus size={16} /> Create Club
+          </button>
+        )}
       </div>
 
       {/* Primary Navigation Tabs */}

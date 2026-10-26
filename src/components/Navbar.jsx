@@ -16,7 +16,7 @@ const navLinks = [
 export default function Navbar() {
   const location = useLocation()
   const navigate = useNavigate()
-  const { notifications, logout, currentUser } = useClubSync()
+  const { notifications, logout, currentUser, clubMemberships } = useClubSync()
   const themeContext = useTheme()
 
   // Gracefully fallback if useTheme is undefined
@@ -44,11 +44,12 @@ export default function Navbar() {
     }
   }
 
-  // Derive role badge
-  const isOfficer = currentUser?.role === 'officer' || 
-    currentUser?.email?.includes('officer') || 
-    currentUser?.bio?.toLowerCase().includes('president') ||
-    currentUser?.bio?.toLowerCase().includes('lead')
+  // Derive role badge: either dedicated demo officer or an officer of any campus club
+  const isOfficer = currentUser?.email === 'officer@clubsync.app' || 
+    (clubMemberships && clubMemberships.some(m => 
+      String(m.user_id) === String(currentUser?.id) && 
+      ['President', 'Vice President', 'Secretary', 'Treasurer', 'officer', 'Officer', 'Lead', 'Head'].includes(m.role)
+    ))
 
   return (
     <>

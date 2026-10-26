@@ -234,14 +234,25 @@ export function ClubSyncProvider({ children }) {
 
   // Helper to check if current user is an officer of a club
   const getUserClubRole = (clubId) => {
-    const membership = clubMemberships.find(m => m.club_id === clubId)
+    if (!currentUser?.id) return null
+    const membership = clubMemberships.find(m => String(m.club_id) === String(clubId) && String(m.user_id) === String(currentUser?.id))
     return membership ? membership.role : null
   }
 
   const isClubOfficer = (clubId) => {
-    if (currentUser?.email === 'officer@clubsync.app' || currentUser?.role === 'officer') return true
+    if (!currentUser) return false
+    if (currentUser?.email === 'officer@clubsync.app') return true
     const role = getUserClubRole(clubId)
-    return role && ['President', 'Vice President', 'Secretary', 'Treasurer', 'officer', 'Officer', 'Lead', 'Head'].includes(role)
+    return Boolean(role && ['President', 'Vice President', 'Secretary', 'Treasurer', 'officer', 'Officer', 'Lead', 'Head'].includes(role))
+  }
+
+  const isAnyClubOfficer = () => {
+    if (!currentUser) return false
+    if (currentUser?.email === 'officer@clubsync.app') return true
+    return clubMemberships.some(m => 
+      String(m.user_id) === String(currentUser?.id) && 
+      ['President', 'Vice President', 'Secretary', 'Treasurer', 'officer', 'Officer', 'Lead', 'Head'].includes(m.role)
+    )
   }
 
   // Create standard notification
@@ -345,7 +356,7 @@ export function ClubSyncProvider({ children }) {
       })
       if (res.ok) {
         if (userId === currentUser?.id) {
-          updateCache(old => ({ ...old, clubMemberships: (old.clubMemberships || []).map(m => m.club_id === clubId ? { ...m, role } : m) }))
+          updateCache(old => ({ ...old, clubMemberships: (old.clubMemberships || []).map(m => (m.club_id === clubId && m.user_id === userId) ? { ...m, role } : m) }))
         }
         toast.success('Role updated!')
         fetchData()
@@ -756,6 +767,7 @@ export function ClubSyncProvider({ children }) {
         currentUser,
         getUserClubRole,
         isClubOfficer,
+        isAnyClubOfficer,
         createClub,
         joinClub,
         leaveClub,

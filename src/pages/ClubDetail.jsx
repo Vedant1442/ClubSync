@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect, useMemo } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { 
@@ -138,7 +138,7 @@ export default function ClubDetail() {
     )
   }
 
-  const isJoined = clubMemberships.some(m => m.club_id === clubId)
+  const isJoined = clubMemberships.some(m => String(m.club_id) === String(clubId) && String(m.user_id) === String(currentUser?.id))
   const isOfficer = isClubOfficer(clubId)
   const myRole = getUserClubRole(clubId)
   const clubColor = getClubColor(club?.name)
@@ -274,6 +274,41 @@ export default function ClubDetail() {
       chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' })
     }
   }, [chatMessages, isChatLoading, activeTab])
+
+  const allTabs = useMemo(() => [
+    { id: 'overview', label: 'Overview', icon: Users },
+    { id: 'constitution', label: 'Constitution', icon: BookOpen },
+    { id: 'recruitment', label: 'Recruitment & Auditions', icon: Briefcase },
+    { id: 'meetings', label: 'Meetings & Minutes', icon: Calendar, memberOnly: true },
+    { id: 'elections', label: 'Elections', icon: CheckCircle, memberOnly: true },
+    { id: 'documents', label: 'Documents', icon: FileText, memberOnly: true },
+    { id: 'tasks', label: 'Tasks (Kanban)', icon: CheckSquare, memberOnly: true },
+    { id: 'treasury', label: 'Treasury', icon: DollarSign, memberOnly: true },
+    { id: 'inventory', label: 'Lab & Equipment', icon: Package },
+    { id: 'mentorship', label: 'Peer Mentorship', icon: GraduationCap },
+    { id: 'chat', label: 'Group Chat', icon: MessageCircle, memberOnly: true },
+    { id: 'assistant', label: 'Knowledge AI', icon: MessageSquare },
+    // Executive Suite (Officer Only)
+    { id: 'analytics', label: 'Executive Analytics', icon: BarChart3, officerOnly: true },
+    { id: 'sponsorships', label: 'Sponsorships & CRM', icon: Handshake, officerOnly: true },
+    { id: 'webhooks', label: 'Discord & Telegram', icon: Radio, officerOnly: true },
+    { id: 'settings', label: 'Settings', icon: Shield, officerOnly: true },
+  ], [])
+
+  const visibleTabs = useMemo(() => {
+    return allTabs.filter(t => {
+      if (t.officerOnly) return isOfficer
+      if (t.memberOnly) return isJoined || isOfficer
+      return true
+    })
+  }, [allTabs, isOfficer, isJoined])
+
+  useEffect(() => {
+    const validIds = visibleTabs.map(t => t.id)
+    if (!validIds.includes(activeTab)) {
+      setActiveTab('overview')
+    }
+  }, [visibleTabs, activeTab])
 
   const handleSendChat = async (e, customPrompt) => {
     if (e && e.preventDefault) e.preventDefault()
@@ -471,24 +506,7 @@ export default function ClubDetail() {
       {/* Horizontally scrollable Tabs Menu with hidden scrollbar and active pill indicator */}
       <div className="relative mb-6">
         <div className="flex items-center gap-1.5 p-1.5 bg-white dark:bg-surface rounded-2xl border border-border shadow-xs overflow-x-auto whitespace-nowrap [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden scroll-smooth">
-          {[
-            { id: 'overview', label: 'Overview', icon: Users },
-            { id: 'analytics', label: 'Executive Analytics', icon: BarChart3 },
-            { id: 'recruitment', label: 'Recruitment & Auditions', icon: Briefcase },
-            { id: 'constitution', label: 'Constitution', icon: BookOpen },
-            { id: 'meetings', label: 'Meetings & Minutes', icon: Calendar },
-            { id: 'elections', label: 'Elections', icon: CheckCircle },
-            { id: 'documents', label: 'Documents', icon: FileText },
-            { id: 'tasks', label: 'Tasks (Kanban)', icon: CheckSquare },
-            { id: 'treasury', label: 'Treasury', icon: DollarSign },
-            { id: 'inventory', label: 'Lab & Equipment', icon: Package },
-            { id: 'sponsorships', label: 'Sponsorships & CRM', icon: Handshake },
-            { id: 'webhooks', label: 'Discord & Telegram', icon: Radio },
-            { id: 'mentorship', label: 'Peer Mentorship', icon: GraduationCap },
-            { id: 'chat', label: 'Group Chat', icon: MessageCircle },
-            { id: 'assistant', label: 'Knowledge AI', icon: MessageSquare },
-            { id: 'settings', label: 'Settings', icon: Shield },
-          ].map(t => {
+          {visibleTabs.map(t => {
             const Icon = t.icon
             const active = activeTab === t.id
             return (
@@ -504,6 +522,11 @@ export default function ClubDetail() {
               >
                 <Icon size={15} className={active ? 'text-white' : 'text-text-secondary'} />
                 <span>{t.label}</span>
+                {t.officerOnly && (
+                  <span className="text-[9px] uppercase tracking-wider font-extrabold px-1.5 py-0.2 bg-amber-500/20 text-amber-500 rounded-md">
+                    Officer
+                  </span>
+                )}
               </button>
             )
           })}
@@ -614,7 +637,7 @@ export default function ClubDetail() {
         )}
 
         {/* EXECUTIVE ANALYTICS TAB */}
-        {activeTab === 'analytics' && (
+        {activeTab === 'analytics' && isOfficer && (
           <ClubAnalyticsTab club={club} isOfficer={isOfficer} />
         )}
 
@@ -1413,12 +1436,12 @@ export default function ClubDetail() {
         )}
 
         {/* CORPORATE SPONSORSHIP & CRM TAB */}
-        {activeTab === 'sponsorships' && (
+        {activeTab === 'sponsorships' && isOfficer && (
           <ClubSponsorshipTab clubId={club.id} clubEvents={clubEvents} isOfficer={isOfficer} />
         )}
 
         {/* DISCORD & TELEGRAM WEBHOOK BRIDGE TAB */}
-        {activeTab === 'webhooks' && (
+        {activeTab === 'webhooks' && isOfficer && (
           <ClubWebhookTab clubId={club.id} isOfficer={isOfficer} />
         )}
 
@@ -1847,7 +1870,7 @@ export default function ClubDetail() {
         )}
 
         {/* SETTINGS / MEMBER MANAGEMENT TAB */}
-        {activeTab === 'settings' && (
+        {activeTab === 'settings' && isOfficer && (
           <div className="grid lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2">
               <h2 className="font-semibold text-lg mb-4">Member Roles</h2>
